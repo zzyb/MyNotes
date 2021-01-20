@@ -1,0 +1,19 @@
+" Quit insert mode
+inoremap jj <Esc>
+inoremap jk <Esc>
+inoremap kk <Esc>
+
+" Quit visual mode
+vnoremap v <Esc>
+
+" Move to the start of line
+nnoremap H ^
+
+" Move to the end of line
+nnoremap L $
+
+" Redo
+nnoremap U <C-r>
+
+" Yank to the end of line
+nnoremap Y y$
