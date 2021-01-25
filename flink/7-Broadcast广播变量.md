@@ -6,7 +6,7 @@
 
 ​	2、TaskManager中的所有Slot所管理的线程在执行task的时候如果需要用到该变量就从TaskManager的内存中读取数据，达到数据共享的效果。
 
-注意点：
+**注意点：**
 
 1、广播变量中封装的数据集大小要适宜，太大，容易造成OOM。[广播出去的数据，会常驻内存，除非程序执行结束]
 
@@ -58,8 +58,6 @@
 ## 案例
 
 ```scala
-package com.huawei.bigdata.flink.examples
-
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.configuration.Configuration

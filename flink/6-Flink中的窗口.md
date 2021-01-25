@@ -23,19 +23,19 @@
 
 4. flink支持在stream上的通过key去区分多个窗口
 
-      
+  ​    
 ### 窗口的实现方式 
 
 上一张经典图：
 
-![1ee4f402b32040ef6ed9dcc44a212078](8-Flink中的窗口.resources/CD34BCB4-E2D4-41AD-B8E7-B6EFDB0BAB82.png)
+![](./window1.png)
 
 
 * Tumbling Time Window
 
 假如我们需要统计每10秒中value总数，需要将用户的行为事件按每10秒进行切分，这种切分被成为翻滚时间窗口（Tumbling Time Window）。翻滚窗口能将数据流切分成不重叠的窗口，每一个事件只能属于一个窗口。
 
-```
+```scala
    	import org.apache.flink.streaming.api.windowing.time.Time
 	//streaming的类型转换
 	import org.apache.flink.streaming.api.scala._
@@ -66,7 +66,7 @@
 
 我们可以每5秒计算一次最近30秒用户购买的value总数。这种窗口我们称为滑动时间窗口（Sliding Time Window）。在滑窗中，一个元素可以对应多个窗口。通过使用 DataStream API，我们可以这样实现：
 
-```
+```scala
    	import org.apache.flink.streaming.api.windowing.time.Time
 	//streaming的类型转换
 	import org.apache.flink.streaming.api.scala._
@@ -99,7 +99,7 @@ CountWindow ()
 
 例子：当某个key数目达到5的时候，计算结果。
 
-```
+```scala
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.scala._
 
@@ -134,7 +134,7 @@ abc
 在这种用户交互事件流中，我们首先想到的是将事件聚合到会话窗口中（一段用户（一个key）持续活跃的周期），由非活跃的间隙分隔开。如上图所示，就是需要计算每个用户在活跃期间总共购买的商品数量，如果用户30秒没有活动则视为会话断开（假设raw data stream是单个用户的购买行为流）。Session Window 的示例代码如下：
 
 
-```
+```scala
    	import org.apache.flink.streaming.api.windowing.time.Time
 	//streaming的类型转换
 	import org.apache.flink.streaming.api.scala._
