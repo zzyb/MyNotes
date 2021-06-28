@@ -1,0 +1,3 @@
+java-core/.gitignore
+java-core/.idea
+java-core/src/main/resources/log4j2.properties
