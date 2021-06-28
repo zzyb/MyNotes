@@ -1,7 +1,5 @@
 " Quit insert mode
-inoremap jj <Esc>
 inoremap jk <Esc>
-inoremap kk <Esc>
 
 " Quit visual mode
 vnoremap v <Esc>
