@@ -75,3 +75,90 @@ class A {
 
 
 
+- 对类型变量T 设置一个限定（bound）, 限制 T只能是实现了XXX接口的类。
+
+  ```java
+  public static <T extends XXX> T min(T[] a)
+  ```
+
+- \<T extends  BoundingType\> 表示T只能是限定类型的子类型。
+
+- 类型变量T和限定类型可以是类，也可以是接口。
+
+- 一个<u>类型变量或通配符</u>（T）可以有多个限定。限定类型用“&”分隔，类型变量用“,”分隔。
+
+  ```java
+  T extends XXX & YYY
+  ```
+
+- **最多有一个限定可以是类**；<u>如果有一个类作为限定，它必须是限定列表的第一个限定</u>。
+
+
+
+# 泛型代码和虚拟机
+
+虚拟机没有泛型类型对象，**所有对象都属于普通类**。
+
+## 类型擦除
+
+- 定义一个泛型类型，都会自动提供一个相应的原始类型（raw type）。
+
+  - 原始类型的名字就是去掉类型参数后的泛型类型名。
+
+    ```java
+    T extends XXX
+    //原始类型名字：XXX
+    ```
+
+- 类型变量 T 会被擦除，并替换为其限定类型。
+  - 无限定类型的变量替换为Object。
+
+- 原始类型用第一个限定来替换类型变量，或者，如果没有给定限定，就替换为Object。
+
+  ```java
+  public class Interval<T extends Comparable & Serializable> implements Serializable {
+    private T lower;
+    private T upper;
+    ...
+    public Interval(T first,T second){
+      ...
+    }
+  }
+  //类型擦除后的原始类型为：(注意 T 的变化)
+  public class Interval implements Serializable {
+    private Comparable lower;
+    private Comparable upper;
+    ...
+    public Interval(Comparable first,Comparable second){
+      ...
+    }
+  }
+  ```
+
+- 为了提高效率，应该将`标签（tagging）接口`放在限定列表的末尾。
+  - 标签接口是<u>没有方法的接口</u>。
+
+## 转换泛型表达式
+
+- 泛型方法调用时，如果擦除了返回类型，编译器会插入强制类型转换。
+
+  ```java
+  Pair<Employee> buddies = ...;
+  Employee buddy = buddies.getFirst();
+  //getFirst 擦除类型后，返回类型是Object。编译器会自动插入 转换到Employee 的强制类型转换。
+  //即，两个步骤：
+  //1:对原始方法Pair.getFirst的调用。
+  //2:将返回的Object类型强制转换为Employee。
+  ```
+
+- 当访问一个泛型字段时，也要插入强制类型转换。
+
+  ```java
+  Employee buddy = buddies.first;
+  //也会在结果字节码中插入强制类型转换。
+  ```
+
+  
+
+## 转换泛型方法
+
