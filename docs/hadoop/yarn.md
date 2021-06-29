@@ -6,7 +6,7 @@ hadoop2.0引入的集群资源管理系统。
 
 ## YARN架构
 
-![](./Figure3Architecture-of-YARN.png)
+![](./Yarn.resource/Figure3Architecture-of-YARN.png)
 
 ### 1、ResourceManager（RM）
 
@@ -46,7 +46,7 @@ ApplicationMaster可在Container内运行任何类型的任务。例如，MapRed
 
 ## YARN工作原理简述
 
-![](./yarn工作原理简图.png)
+![](./Yarn.resource/yarn工作原理简图.png)
 
 1. Client 提交作业到 YARN 上。
 2. ResourceManager 选择一个NodeManager，启动一个Container并运行ApplicationMaster实例。
@@ -55,7 +55,7 @@ ApplicationMaster可在Container内运行任何类型的任务。例如，MapRed
 
 ## YARN工作原理详述
 
-![](./yarn工作原理.png)
+![](./Yarn.resource/yarn工作原理.png)
 
 1. 作业提交
 
@@ -97,7 +97,7 @@ hadoop jar hadoop-mapreduce-eamples-2.6.0-cdh5.15.2.jar pi 3 3
 
 # Flink on yarn
 
-![](./flink on yarn架构.png)
+![](./Yarn.resource/flink on yarn架构.png)
 
 ## Flink on yarn 集群启动步骤
 
@@ -145,7 +145,7 @@ Usage:
      -z,--zookeeperNamespace <arg>   Namespace to create the Zookeeper sub-paths for high availability mode
 ```
 
-![](./yarn-session-help.png)
+![](./Yarn.resource/yarn-session-help.png)
 
 - 可以指定TaskManager个数以及内存（内存默认1G）。
 - JobManager个数只能是一个，但是可以指定内存。
