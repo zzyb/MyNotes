@@ -199,7 +199,9 @@ class DateInterval extends Pair{
 }
 ```
 
-一个例子：
+
+
+- 一个例子：
 
 ```java
 var interval = new DateInterval(...);
@@ -208,4 +210,54 @@ pair.setSecond(aDate);
 ```
 
 我们<u>希望setSecond调用具有**多态性**，由于pair引用了一个DateInterval对象，所以应该调用DateInterval.second</u>。
+
+**问题**：类型擦除与多态发生了冲突！
+
+**解决**：编译器在DateInterval类中生成了一个`桥方法（bridge method）`
+
+```java
+public void setSecond(Object second) {
+  setSecond((LocalDate) second)
+}
+```
+
+于是：
+
+```java
+var interval = new DateInterval(...);
+Pair<LocalDate> pair = interval; // 可行，分配给超类。
+pair.setSecond(aDate);	
+// pair （经过类型擦除）只有一个 setSecond方法：setSecond(Object)
+// 虚拟机在pair的引用对象（interval，即DateInterval）上调用这个方法。
+// DateInterval.setSecond(Object)，这个桥方法会去调用 DateInterval.setSecond(LocalDate)
+```
+
+- 桥方法看起来会很奇怪
+
+如果DateInterval类也覆盖了getSecond方法，就会出现：
+
+```java
+LocalDate getSecond()	// 定义在DateInterval
+Object getSecond()		// 覆盖方法，定义在Pair中
+//不能如此写代码！！！（两个方法有相同的参数类型【这里是都没有参数】）
+//但是：
+//在虚拟机中，会由参数类型和返回类型共同指定一个方法！！！！！！！！
+//在虚拟机中，会由参数类型和返回类型共同指定一个方法！！！！！！！！
+//在虚拟机中，会由参数类型和返回类型共同指定一个方法！！！！！！！！
+
+```
+
+- 桥方法不仅用于泛型类型
+
+见361p - 注释
+
+- 调用遗留代码
+
+见337p
+
+
+
+
+
+# 限制与局限性
 
