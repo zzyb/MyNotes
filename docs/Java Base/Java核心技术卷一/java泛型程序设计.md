@@ -162,3 +162,50 @@ class A {
 
 ## 转换泛型方法
 
+`泛型方法`的类型擦除：
+
+```java
+//一个泛型方法： （通常认为这是一组方法）
+public static <T extends Comparable> T min(T[] a)
+//经过类型擦除的泛型方法： （擦除后，剩下一个方法）
+public static Comparable min(Comparable[] a)
+```
+
+- 类型擦除带来两个复杂问题！
+
+```java
+//注意：Pair<T> 中也有 setSecond(T)方法。
+class DateInterval extends Pair<LocalData>{
+  //这里覆盖了Pair中的setSecond(LocalDate)方法
+  public void setSecond(LocalData second){
+    if(second.compareTo(getFirst())){
+      super.setSecond(second);
+    }
+  }
+}
+```
+
+经过类型擦除后：
+
+```java
+//注意：Pair<T> 中也有 setSecond(T)方法。
+class DateInterval extends Pair{
+  //因为类型擦除，导致Pair中的方法setSecond(T) 变成了 setSecond(Object)
+  public void setSecond(LocalData second){
+		...
+  }
+  //因此这里还有另一个从Pair中继承的方法
+  public void setSecond(Object) {}
+}
+```
+
+一个例子：
+
+```java
+var interval = new DateInterval(...);
+Pair<LocalDate> pair = interval; // 可行，分配给超类。
+pair.setSecond(aDate);
+```
+
+我们<u>希望setSecond调用具有**多态性**，由于pair引用了一个DateInterval对象，所以应该调用DateInterval.second</u>。
+
