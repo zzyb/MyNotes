@@ -2,7 +2,9 @@
 
 YARN -- Yet Another Resource Negotiator
 
-hadoop2.0引入的集群资源管理系统。
+hadoop2.0引入的**集群资源管理系统**。
+
+<u>提供请求和使用集群资源的API</u>。
 
 ## YARN架构
 
