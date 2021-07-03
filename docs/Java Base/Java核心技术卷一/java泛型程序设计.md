@@ -269,9 +269,9 @@ Object getSecond()		// 覆盖方法，定义在Pair中
 
 # 通配符类型
 
-> extends上限通配符（子类型限定），用来限制类型的上限，只能传入本类和子类，add方法受阻，可以从一个数据类型里获取数据；
+> extends上限通配符（子类型限定），只能传入本类和子类，add方法受阻，可以从一个数据类型里获取数据；
 
-> super下限通配符（超类型限定），用来限制类型的下限，只能传入本类和父类，get方法受阻，可以把对象写入一个数据结构里；
+> super下限通配符（超类型限定），只能传入本类和父类，get方法受阻，可以把对象写入一个数据结构里；
 
 - 在**通配符类型**中，<u>允许类型参数发生变化</u>。
 
@@ -280,6 +280,13 @@ Object getSecond()		// 覆盖方法，定义在Pair中
   ```java
   Pair<? extends Employee>
   //表示 任何泛型Pair类型，它的类型参数（T）是Employee的子类。
+    
+  ? extends Employee getFirst()
+  //OK 
+  //返回值是Employee的某个子类型，赋值给一个Employee的引用完全合法。
+  void setFirst(? extends Employee)
+  //不能调用！
+  //编译器只知道需要Employee的某个子类型，但是不知道具体是什么类型。所以拒绝传递任何类型。`?号不能匹配。`
   ```
 
 - 超类型限定 supertype bound
@@ -287,6 +294,12 @@ Object getSecond()		// 覆盖方法，定义在Pair中
   ```java
   ? super Manager
   //这个通配符限制为 Manager 的所有超类型。
+    
+  void setFirst(? super Manager)
+  //OK
+  //只能传递Manager或者其子类型（子类引用赋值给超类变量是合法的「继承」）---- 因为? super Manager 限制为Manager的所有超类。
+  ? super Manager getFirst()
+  //不能调用，如果调用，不能保证返回对象的类型是什么。
   ```
 
 - 无限定通配符
@@ -294,6 +307,66 @@ Object getSecond()		// 覆盖方法，定义在Pair中
   ```java
   Pair<?>
   //? 通配符表示未知类型，某一个类型。
+  
+  ? getFirst()	
+  //可以调用，返回值只能赋值给Object。
+  void setFirst(?)
+  //不能调用，Object也不行。（编译器不知道参数什么类型）
+  //可以调用“setFirst(null)”
+  ```
+  
+  **与原始类型的区别在于**：可以用<u>任意Object对象</u>调用<u>原始Pair类</u>的setFirst方法。
+
+## 通配符捕获
+
+- 通配符不是变量类型，代码中 `?` 不能作为一种类型。
+
+  ```java
+  //这个不是泛型方法，swap有一个固定的Pair<?>类型的参数。 
+  //这个不是泛型方法，swap有一个固定的Pair<?>类型的参数。 
+  //这个不是泛型方法，swap有一个固定的Pair<?>类型的参数。 
+  public static void swap(Pair<?> p)
+    // ? t = p.getFirst();   ERROR -------- 这里是非法的！！！
+    // p.setFirst(p.getSecond());
+    // p.setSecond(t);
   ```
 
-  与原始类型的区别在于：
+  - 问题：
+
+  在交换时，我们必须保存第一个元素。但是不能用通配符`?`保存。
+
+  - 解决办法：
+
+  1. 编写辅助方法**swapHelper（泛型方法）**
+
+     ```java
+      public static void swapHelper(Pair<T> p){
+        T t = p.getFirst();     //这里用 T 接收第一个元素。
+        p.setFirst(p.getSecond());
+        p.setSecond(t);
+      }
+     ```
+
+  2. 用swap调用swapHelper
+
+     ```java 
+     public static void swap(Pair<?> p) { swapHelper(p) }
+     //swapHelper方法的参数T捕获通配符。
+     //swapHelper不知道通配符指定哪种类型，但是，这是一个明确的类型。并且从<T> swapHelper 的定义也可以清楚看到T指示的哪种类型。
+     ```
+
+- 通配符捕获只有在非常限定的情况下才是合法的。**编译器必须保证通配符表示单个确定的类型。**
+
+  - ArrayList<**Pair\<T\>**> 中的 T 永远不能捕获 ArrayList<**Pair<?>**> 中的通配符。因为数组可以保存两个Pair<?> ，其中? 分别由不同的类型。
+
+
+
+## PECS 原则
+
+根据上面的例子，我们看到，使用上界限定符定义的类，可以向外提供东西，也就是说作为 Producer。使用下界限定符定义的类，可以作为 Consumer 接收外部往自身添加东西。
+
+总结起来就是， "Producer Extends, Consumer Super":
+
+- "Producer Extends" - 如果你需要一个只读类型，用它来produce T，那么使用`<? extends T>`
+- "Consumer Super" - 如果你需要一个只写类型，用它来consume T，那么使用`<? super T>`
+- 如果需要同时读取以及写入，那么我们就不能使用通配符了。
