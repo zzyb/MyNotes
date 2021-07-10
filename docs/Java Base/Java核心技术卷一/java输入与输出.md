@@ -1,5 +1,11 @@
 # 输入与输出
 
+## 完整的流家族
+
+![image-20210709213308621](./java输入与输出.resource/流家族1.png)
+
+![image-20210709213447113](./java输入与输出.resource/流家族2.png)
+
 ## 输入/输出流
 
 `输入流（I）`：可以从其中**读取**一个字节序列的对象。
@@ -65,5 +71,176 @@ out.write(values);
   }
   ```
 
+- close方法会关闭输入输出流来释放掉十分有限的系统资源。
+
+  - 同时还会冲刷该输出流的缓冲区：所有临时置于缓冲区中，以便更大的包的形式传递的字节在关闭输出流时都将被送出。
+
+- flush方法：人为的冲刷这些输出。
+
+
+
+
+
+**InputStream 和 OutputStream 可以读写单个字节或字节数组。**
+
+**Reader 和 Writer 的子类可以读写Unicode文本。**
+
+
+
+## 组合输入输出流过滤器
+
+- Java使用了一种非常灵巧的机制来分离职责：
+
+  **某些输入流**可以从<u>文件或者其他更外部</u>的位置上获取字节；而**其它输入流**可以<u>将字节组装到更有用的数据结构</u>中。
+
+```java
+//读取文件中的流：
+FileInputStream fin = new FileInputStream("out.txt");
+//传递给DataInputStream
+DataInputStream dis = new DataInputStream(fin);
+
+int i = dis.readInt();
+System.out.println(i);
+
+
+//out.txt文件：1234567890
+//输出：825373492
+//readInt() 读取 4 个字节，但 1234 读取为 49、50、51、52 ，根据 DataInput.readInt() 规范产生 825373492 int。
+```
+
+- 通过嵌套过滤器来添加更多功能
+
+```java
+//例如：输入流默认不被缓冲区缓存，每对read调用都会请求操作系统发送一个字节。相比之下，请求一个数据块并置于缓冲区中更高效。
+DataInputStream dis =
+  new DataInputStream(
+  new BufferedInputStream(
+    new FileInputStream("out.txt"))
+);
+```
+
+- 当有多个输入流链接在一起时，你需要跟踪各个中介输入流。
+  - 读入和回推时可回推输入流仅有的方法，如果希望可以预览并且可以读入数字，那就需要一个即可回推输入流，又是一个数据数据流的引用。
+
+```java
+//读取输入时，预览下一个字节了解是否时需要的值。
+PushbackInputStream pis = new PushbackInputStream(
+  new BufferedInputStream(
+    new FileInputStream("out.txt"))
+);
+
+
+System.out.println("原始输入可用字节：" + pis.available());
+int read = pis.read();
+System.out.println("读取到字节[pis.read()]：" + read);
+System.out.println("读取后剩余可用字节：" + pis.available());
+System.out.println("回推读取到的字节[pis.unread(read)]：" + read);
+pis.unread(read);
+System.out.println("回推后可用字节：" + pis.available());
+
+//out.txt文件：1234
+//原始输入可用字节：5
+//读取到字节[pis.read()]：49
+//读取后剩余可用字节：4
+//回推读取到的字节[pis.unread(read)]：49
+//回推后可用字节：5
+```
+
+
+
+
+
+## 文本输入与输出
+
+- 保存数据时，可以选择<u>二进制格式</u>或<u>文本格式</u>。
+  - 存储文本字符串时，需要考虑字符编码方式。Java内部使用 UTF-16 编码方式。
+- `OutputStreamWriter`类 使用选定的字符编码方式，把<u>Unicode码元的输出流转换为字节流</u>。
+- `InputStreamReader`类 将包含字节（用某种字符编码方式表示的字符）的输入流转换为可以产生Unicode的码元读入器。
+
+
+
+## 写出文本输出
+
+- 使用PrintWriter类。
+
+  - 拥有文本格式打印字符串和数字的方法。
+
+  ```java
+  PrintWriter printWriter = new PrintWriter("writer.txt");
+  printWriter.println("hello zyb.");
+  printWriter.flush();
+  printWriter.close();	
+  ```
+
+  - 可以使用另一个构造器方法[ PrintWriter(Writer writer, boolean autoFlush) ]设置自动冲刷机制：
+
+  ```java
+  PrintWriter printWriter = new PrintWriter(
+    new OutputStreamWriter(
+      new FileOutputStream("writer.txt")
+    ),
+    true
+  );
+  printWriter.println("auto flush");
+  //        printWriter.flush();
+  //        printWriter.close();
+  ```
+
   
 
+## 读入文本输入
+
+- Scanner类：从任何输入流构建Scanner对象。
+
+  ```java
+  /**  源码
+      /**
+       * Constructs a new <code>Scanner</code> that produces values scanned
+       * from the specified input stream. Bytes from the stream are converted
+       * into characters using the underlying platform's
+       * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
+       *
+       * @param  source An input stream to be scanned
+       */
+      public Scanner(InputStream source) {
+          this(new InputStreamReader(source), WHITESPACE_PATTERN);
+      }
+  */
+  
+    
+  Scanner in = new Scanner(new FileInputStream("writer.txt"));
+  
+  while(in.hasNext()){
+    System.out.println(in.next());
+  }
+  //writer.txt 内容：auto flush
+  //输出：
+  //auto
+  //flush
+  ```
+
+  
+
+- Files.readAllBytes方法：短小文本文件读入。
+
+  ```java
+  /**
+      Reads all the bytes from a file. The method ensures that the file is closed when all bytes have been read or an I/O error, or other runtime exception, is thrown.
+      Note that this method is intended for simple cases where it is convenient to read all bytes into a byte array. It is not intended for reading in large files.
+      Params:
+      path – the path to the file
+      Returns:
+      a byte array containing the bytes read from the file
+      Throws:
+      IOException – if an I/O error occurs reading from the stream
+      OutOfMemoryError – if an array of the required size cannot be allocated, for example the file is larger that 2GB
+      SecurityException – In the case of the default provider, and a security manager is installed, the checkRead method is invoked to check read access to the file.
+    */
+  
+  String str = new String(
+    Files.readAllBytes(Paths.get("/Users/zhangyanbo/writer.txt"))
+  );
+  System.out.println(str);
+  ```
+
+  
