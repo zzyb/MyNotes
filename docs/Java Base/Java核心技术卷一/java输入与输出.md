@@ -190,7 +190,7 @@ System.out.println("回推后可用字节：" + pis.available());
 
 ## 读入文本输入
 
-- Scanner类：从任何输入流构建Scanner对象。
+- Scanner类：从任何<u>输入流构建Scanner对象</u>。
 
   ```java
   /**  源码
@@ -219,9 +219,7 @@ System.out.println("回推后可用字节：" + pis.available());
   //flush
   ```
 
-  
-
-- Files.readAllBytes方法：短小文本文件读入。
+- Files.readAllBytes方法：<u>短小文本文件读入</u>。
 
   ```java
   /**
@@ -243,4 +241,231 @@ System.out.println("回推后可用字节：" + pis.available());
   System.out.println(str);
   ```
 
+- Files.readAllLines(path,charset)方法：将<u>文件一行行的读入</u>。
+
+  ```java
+  List<String> allLines = Files.readAllLines(Paths.get("/Users/zhangyanbo/allLines.txt"),StandardCharsets.UTF_8);
+  for(String value:allLines){
+    System.out.println(value);
+  }
+  ```
+
+- Files.lines(path,charset)：<u>处理大文件</u>，将行惰性处理为一个Stream\<String\>对象。
+
+  ```java 
+  Stream<String> lines = Files.lines(Paths.get("/Users/zhangyanbo/allLines.txt"), StandardCharsets.UTF_8);
+  String collect = lines.collect(Collectors.joining("|"));
+  System.out.println(collect);
+  ```
+
+- 使用扫描器Scanner读入符号token：由分隔符分隔的字符串，默认分隔符是空白字符。可以将分隔符修改为正则表达式。
+
+  ```java
+  Scanner in = new Scanner(new FileInputStream("/Users/zhangyanbo/allLines.txt"));
+  //这里表示接受任何非Unicode字母作为分隔符。
+  in.useDelimiter("\\PL+");
+  while (in.hasNext()){
+    System.out.println(in.next());
+  }
+  ```
+
+- 早期处理文本输入的方法：BufferedReader类。
+
+  ```java
+  //早期方法。
+  InputStream inputStream = new FileInputStream("/Users/zhangyanbo/allLines.txt");
+  InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+  BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+  String line;
+  while ((line = bufferedReader.readLine()) != null){
+    System.out.println(line);
+  }
   
+  
+  //现在又了lines方法获取Stream<String>对象。
+  
+  Stream<String> lines = bufferedReader.lines();
+  String collect = lines.collect(Collectors.joining("\n"));
+  System.out.println(collect);
+  ```
+
+  
+
+## 字符编码方式
+
+**字符如何编码成字节？**
+
+- Java 针对字符使用的是Unicode标准。
+  - 每个字符或编码点都具有一个21位的整数，有多种不同的字符**编码方式**。即，将21位数字包装成字节的方法有很多。
+
+#### 编码方式
+
+- UTF-8：
+
+  将每个Unicode编码点编码为1到4个字节的序列。
+
+- UTF-16：
+
+  将每个Unicode编码点编码为1个或2个16位值。
+
+- ISO-8859-1:
+
+  单字节编码。
+
+- Shift-JIS：
+
+  日文字符可变长编码。
+
+
+
+#### StandardCharsets类
+
+- 具有类型为`Charset`的静态变量，用于表示每种Java虚拟机都必须支持的字符编码方式：
+
+```java
+public final class StandardCharsets {
+	public static final Charset US_ASCII = Charset.forName("US-ASCII");
+  public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+  public static final Charset UTF_8 = Charset.forName("UTF-8");
+  public static final Charset UTF_16BE = Charset.forName("UTF-16BE");
+  public static final Charset UTF_16LE = Charset.forName("UTF-16LE");
+  public static final Charset UTF_16 = Charset.forName("UTF-16");
+}
+```
+
+- 为了获得另一种编码方式的Charset，使用静态的forName方法：
+
+```java
+Charset shiftJIS = Charset.forName("Shift-JIS");
+```
+
+
+
+## 读写二进制数据
+
+**文本格式并不像以<u>二进制格式</u>传递数据那样<u>高效</u>。**
+
+- DataOutput接口
+
+  定义了以二进制格式写数组、字符、boolean值和字符串的方法。
+
+  ```java
+  writeBoolean
+  writeByte
+  writeShort
+  writeChar
+  //总是将整数写出为4字节的二进制数量值。
+  writeInt
+  writeLong
+  writeFloat
+  //总是将一个double值写出为8字节的二进制数据值。
+  writeDouble
+  writeBytes
+  writeChars
+  writeUTF
+  ```
+
+  - 产生的结果并非人可阅读的，但是<u>对于给定类型的每个值，使用的空间是相同的，而且将其读回也比解析文本要快</u>。
+
+- DataInput接口
+
+  读回数据。
+
+  ```java
+  //读入一个给定类型的值。
+  readBoolean
+  readByte
+  readUnsignedByte
+  readShort
+  readUnsignedShort
+  readChar
+  readInt
+  readLong
+  readFloat
+  readDouble
+  readLine
+  readUTF
+  ```
+
+- 从文本读取二进制数据：将DataInputStream类与某个字节流组合。
+
+  ```java
+  DataInputStream dataInputStream = new DataInputStream(new FileInputStream("/Users/zhangyanbo/allLines.txt"));
+  //读入四个字节：例如0000
+  int i = dataInputStream.readInt();
+  //输出：808464432
+  System.out.println(i);
+  //808464432是10进制数，转换为16进制是0x30303030，0x30是字符'0'的ASCII码的16进制表示，也就是说，808464432这个数字，对应字符串“0000”
+  ```
+
+- 写出二进制数据：使用DataOutputStream类与FileOutputStream组合。
+
+  ```java
+  //先写出
+  DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream("/Users/zhangyanbo/allLines.txt"));
+  dataOutputStream.writeInt(1234);
+  //在读入
+  DataInputStream dataInputStream = new DataInputStream(new FileInputStream("/Users/zhangyanbo/allLines.txt"));
+  int i = dataInputStream.readInt();
+  System.out.println(i);
+  
+  //输出1234
+  ```
+
+
+
+## 随机访问文件
+
+RandomAccessFile类可以在任何位置查找或写入数据。
+
+- 使用字符串“r“ 或者 ”rw“作为构造器的参数指定只读/读写。
+
+  ```java
+  RandomAccessFile r = new RandomAccessFile("/Users/zhangyanbo/allLines.txt", "r");
+  int i = r.readInt();
+  System.out.println(i);
+  //1234
+  ```
+
+- 文件作为RandomAccessFile打开时，文件不会被删除。
+
+- 有一个`seek方法`：将**文件指针**设置到文件中的任意字节位置。seek参数是一个long类型整数，值位于0到文件按字节度量的长度。
+
+  - **文件指针**：表示下一个将被读入或写出的字节所处位置的字节指针。
+
+  ```java
+  RandomAccessFile r = new RandomAccessFile("/Users/zhangyanbo/allLines.txt", "r");
+  System.out.println(r.readInt());
+  System.out.println(r.getFilePointer());
+  //1234
+  //4
+  
+  r.seek(0);
+  System.out.println(r.getFilePointer());
+  //0
+  
+  System.out.println(r.readInt());
+  System.out.println(r.getFilePointer());
+  //1234
+  //4
+  ```
+
+- getFilePointer方法：返回文件指针当前位置。
+
+  ```java
+  RandomAccessFile r = new RandomAccessFile("/Users/zhangyanbo/allLines.txt", "r");
+  int i = r.readInt();
+  System.out.println(i);
+  //1234
+  System.out.println(r.getFilePointer());
+  //4
+  ```
+
+
+
+## 对象输入输出流与序列化
+
+### 保存和加载序列化对象
+
+
+
