@@ -256,6 +256,15 @@ System.out.println("回推后可用字节：" + pis.available());
   Stream<String> lines = Files.lines(Paths.get("/Users/zhangyanbo/allLines.txt"), StandardCharsets.UTF_8);
   String collect = lines.collect(Collectors.joining("|"));
   System.out.println(collect);
+  
+  //按行读取
+  Stream<String> lines = Files.lines(Paths.get("C:\\Users\\Lenovo\\Desktop\\hdfs常用命令.txt"), StandardCharsets.UTF_8);
+  lines.forEach(
+      line -> {
+          System.out.println(line);
+          System.out.println("------------");
+      }
+  );
   ```
 
 - 使用扫描器Scanner读入符号token：由分隔符分隔的字符串，默认分隔符是空白字符。可以将分隔符修改为正则表达式。
