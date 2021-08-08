@@ -139,10 +139,107 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 }
 ```
 
-如果线程被阻塞，就无法检查中断状态。
+```java
+      /**
+       * 设置线程中断状态，并检查中断状态，如果监测到中断状态退出循环。
+       */
+    Runnable r1 = () -> {
+            for(int i=0;i<=9 && !Thread.currentThread().isInterrupted();i++){
+              System.out.println( i + " From r1.");
+              if(i == 2){
+                Thread.currentThread().interrupt();
+              }
+            }
+    };
+          new Thread(r1).start();
+/*
+输出：
+0 From r1.
+1 From r1.
+2 From r1.
+*/
+```
+
+
+
+<u>如果线程被阻塞，就无法检查中断状态。</u>
 
 - `InterruptedException异常`：当一个被sleep或wait调用阻塞的线程上调用interrupt方法时，那个阻塞调用（sleep或wait）将被一个InterruptedException异常中断。
   - 有一些阻塞I/O不能被中断，对此应该考虑选择可中断的调用。
+
+```java
+      /**
+       * 在线程休眠sleep期间，调用线程中断，sleep会被一个interruptException异常中断。
+       */
+      Runnable r4 = () -> {
+          try {
+              for (int i = 0; i <= 10 && !Thread.currentThread().isInterrupted(); i++) {
+                  System.out.println( i + " From r4.");
+                  Thread.sleep(3000);
+              }
+          } catch (InterruptedException e) {
+              System.out.println("执行catch代码");
+          }
+      };
+
+          Thread thread4 = new Thread(r4);
+          thread4.start();
+          //主线程休眠7秒让thread4运行
+          try {
+              Thread.sleep(7000);
+          } catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+          //中断thread4
+          thread4.interrupt();
+/*
+输出：
+0 From r4.
+1 From r4.
+2 From r4.
+执行catch代码
+*/
+```
+
+
+
+
+
+<u>设置中断状态之后，调用sleep方法，不会休眠！</u>
+
+1. 首先会清除已设置的中断状态。
+2. 然后抛出InterruptException异常。
+
+**因此，如果你循环调用了sleep，不要检测中断状态，而应当捕获InterruptException异常**。
+
+```java
+    Runnable r3 =
+        () -> {
+          try {
+            for (int i = 0; i <= 9 && !Thread.currentThread().isInterrupted(); i++) {
+              System.out.println(i + " From r3.");
+              if(i==3){
+                  //设置中断状态,会在循环检查处退出循环
+                  Thread.currentThread().interrupt();
+              }
+            }
+            //输出当前的线程中断状态。 输出为 true
+              System.out.println(Thread.currentThread().isInterrupted());
+            //*** 此时调用sleep ***
+              Thread.sleep(2000);
+          } catch (InterruptedException e) {
+              //输出当前的线程中断状态。 输出为 catch : false 也就是说，中断状态被清除。
+              System.out.print("catch : ");
+              System.out.println(Thread.currentThread().isInterrupted());
+          } finally {
+              //输出当前的线程中断状态。 输出为 finally : false 也就是说，中断状态被清除。
+              System.out.print("final : ");
+              System.out.println(Thread.currentThread().isInterrupted());
+          }
+        };
+
+      new Thread(r3).start();
+```
 
 
 
@@ -155,19 +252,131 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 
 
 
-- 
+| 检测线程是否被中断 |          |                                                  |                                                              |
+| ------------------ | -------- | ------------------------------------------------ | ------------------------------------------------------------ |
+| isInterrupted()    | 实例方法 | 检查是否有线程被中断，但是不会改变中断状态。     | Thread.currentThread().isInterrupted()<br />或者<br />Thread thread6 = new Thread(r6);<br />thread6.isInterrupted() |
+| interrupted()      | 静态方法 | 检查当前线程是否被中断，并清除该线程的中断状态。 | Thread.interrupted()                                         |
 
-  
+```java
+    Runnable r5 =
+        () -> {
+          int i = 0;
+          while (!Thread.currentThread().isInterrupted()) {
+            System.out.println("hello i am here " + i);
+            i++;
+            if (i == 10) {
+              Thread.currentThread().interrupt();
+                // 静态方法interrupted ,检测当前线程是否被中断，同时清除线程中断状态。
+                // 意味着 在输出语句中调用后，循环处就检测不到了（因为被清除了）。
+              System.out.println(Thread.interrupted());
+            }
+            if (i == 20) {
+              Thread.currentThread().interrupt();
+                //实例方法isInterrupted ,检测线程是否被中断，不会改变线程中断状态。
+                //循环处，依然能够监测到。
+              System.out.println(Thread.currentThread().isInterrupted());
+            }
+          }
+        };
+     new Thread(r5).start();
+```
 
-  
 
-  
 
-  
+尽可能的避免在底层代码抑制InterruptException异常。有两个推荐的方式：
 
-  
+1. 捕获异常，并在catch中设置它的中断状态。
 
-  
+   ```java
+       public static void b(){
+           try {
+               System.out.println("休眠前");
+               Thread.sleep(30000);
+               System.out.println("休眠前");
+           } catch (InterruptedException e) {
+               // 2- 在catch中设置中断状态，让调用者可以捕捉到。
+               Thread.currentThread().interrupt();
+               System.out.println(" catch: "+Thread.currentThread().isInterrupted());//catch: true
+           }
+       }
+   ```
 
-  
+2. 抛出异常，给调用者捕获。（throws InterruptException）
+
+   ```java
+       public static void c() throws InterruptedException {
+           System.out.println("休眠前");
+           Thread.sleep(30000);
+           System.out.println("休眠前");
+       }
+   ```
+
+3. 不要这样做！！！抑制异常。
+
+   ```java
+     public static void a(){
+         try {
+             System.out.println("休眠前");
+             Thread.sleep(30000);
+             System.out.println("休眠前");
+         } catch (InterruptedException e) {
+             // 1- 忽略中断异常，同时调用者没有中断状态 不推荐！！！
+              System.out.println(" catch: "+Thread.currentThread().isInterrupted());
+         }
+     }
+   ```
+
+   
+
+
+
+### 守护线程
+
+通过调用`t.setDaemon(true)` 将一个线程转化为守护线程。
+
+- 守护线程的作用是**给其它线程提供服务**。
+- 当只剩下守护线程的时候，虚拟机就会退出。
+- 必须在**线程启动前调用**。
+
+```java
+      /**
+       * 设置线程中断状态，并检查中断状态，如果监测到中断状态退出循环。
+       */
+    Runnable r1 = () -> {
+            for(int i=0;i<=9 && !Thread.currentThread().isInterrupted();i++){
+              System.out.println( i + " From r1.");
+              if(i == 2){
+                Thread.currentThread().interrupt();
+              }
+            }
+    };
+      new Thread(r1).setDaemon(true);
+      new Thread(r1).start();
+```
+
+
+
+### 线程名
+
+通过`t.setNam("MyThread")`为线程设置名字。
+
+
+
+### 未捕获异常处理器
+
+
+
+### 线程优先级
+
+每个线程都有一个优先级。
+
+- 默认，一个线程会继承构造 它的那个线程的优先级。
+- 通过setPriority方法提高或降低一个线程的优先级。
+- 优先级介于MIN_PRIORITY ～ MAX_PRIORITY之间。
+- 线程优先级高度依赖于系统。
+- 现在**不要使用线程优先级**！！！
+
+
+
+## 同步
 
