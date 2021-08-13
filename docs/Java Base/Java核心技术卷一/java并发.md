@@ -380,3 +380,12 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 
 ## 同步
 
+### 竟态条件
+
+**竟态条件**：两个或两个以上的线程需要共享对同一数据的存取，可能会发生对象被破坏。这就是竟态条件（race condition）。
+
+### 竟态条件的一个示例：
+
+```java
+```
+
