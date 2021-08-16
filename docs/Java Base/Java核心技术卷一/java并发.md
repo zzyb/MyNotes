@@ -389,3 +389,100 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 ```java
 ```
 
+
+
+
+
+## 任务和线程池
+
+如果你的程序创建了<u>大量生命期很短的线程</u>，那么不应该把每个任务映射到一个单独的线程，而**应该使用线程池**。（thread pool）。
+
+### Callable 与 Future
+
+**Runnalbe** 封装一个<u>异步运行的任务</u>。（想像成：没有参数和返回值的异步方法）。
+
+**Callable** 与 Runnable 类似。但是<u>有返回值</u>。Callable接口是一个参数化的类型，只有一个方法call。
+
+```java
+public interface Callable<V>{
+  V call() throws Exception;
+}
+//Callable<Integer> 返回Integer对象的异步计算。
+```
+
+**Future** 保存异步计算的结果。
+
+- 可以启动一个计算，将Future对象交给某个线程，然后忘掉它。这个Future 对象的所有者在结果计算好之后就可以获得结果。
+
+```java
+// Future<V> 接口有如下方法：
+V get()
+  //调用会阻塞，直到计算完成。
+V get(long timeout, TimeUnit unit)
+  //调用也会阻塞，不过如果在计算完成前调用超时，会抛出一个TimeoutException异常。
+//如果运行该计算的线程被中断，都会[get()、get(long timeout, TimeUnit unit)]抛出InterruptedException异常。
+//如果计算已经完成，get方法会立即返回。
+void cancel(boolean mayInterrupt)
+  //取消计算：如果计算还没有开始，会被取消不再开始；如果计算正在运行，同时mayInterrupt参数为true，那么会被中断。
+boolean isCanceled()
+boolean isDone()
+```
+
+
+
+**取消一个任务涉及两个步骤：**
+
+1. 必须找到并中断底层线程。
+2. 任务实现（在call方法中）必须感知到中断，并放弃它的工作。
+
+
+
+**执行Callable：**
+
+- 一种方法是：FutureTask，它实现了Future和Runnable接口，所以可以构造一个线程来运行任务。
+
+  - ```java
+    Callable<Integer> task = ...;
+    var futureTask = new FutureTask<Integer>(task);
+    var t = new Thread(futureTask);
+    t.start;
+    ...
+    Integer result = task.get();
+    ```
+
+    ```java
+      public static void main(String[] args) throws ExecutionException, InterruptedException {
+        //
+        Callable<Integer> r =
+            () -> {
+            int sum = 0;
+              for (int i = 0; i <= 3; i++) {
+                System.out.println(i);
+                sum += i;
+              }
+              return sum;
+            };
+    
+        FutureTask<Integer> integerFutureTask = new FutureTask<>(r);
+        Thread thread = new Thread(integerFutureTask);
+        thread.start();
+    
+        Integer integer = integerFutureTask.get();
+        System.out.println("----> " + integer);
+      }
+    //结果：
+    //0
+    //1
+    //2
+    //3
+    //----> 6
+    ```
+
+- 另一个种方法（更常见的）：Callable传递到一个执行器。
+
+
+
+## 执行器
+
+Executors类有许多静态工厂方法，用来构造线程池。
+
