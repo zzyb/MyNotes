@@ -486,3 +486,114 @@ boolean isDone()
 
 Executors类有许多静态工厂方法，用来构造线程池。
 
+![](./java并发.resource/执行器工厂方法.jpg)
+
+### 三个重要的工厂方法
+
+- newCachedThreadPool：
+
+构造一个线程池，会立即执行各个任务，如果有空余线程，就是用空余线程来执行任务；<u>如果没有可用空闲线程，就创建一个新线程</u>。
+
+- newFixedThreadPool：
+
+构造<u>一个固定大小的线程池</u>。如果提交任务多于空闲线程数，就把未得到服务的任务放到队列中。当其他任务完成后，再运行这些排队的任务。
+
+- newSingleThreadExecutor：
+
+构造一个<u>大小为1的线程池，由一个线程顺序的执行提交的任务</u>（一个接着一个运行）。
+
+**这三个方法都返回<u>实现了ExecutorService接口的</u>`ThreadPoolExecutor类`的对象。**
+
+
+
+### 一些常用规则
+
+1. 如果线程生存期很短或大量时间都在阻塞，那么可以使用一个缓存线程池；
+2. 如果工作量大且并不阻塞，你肯定不希望运行太多线程，可以使用固定线程池。
+3. 单线程执行器对性能分析很有作用。
+
+
+
+### 提交作业（Runnable/Callable对象）ExecutorService的几个方法
+
+- Future\<T\> submit(Callable\<T\> task)
+  - 调用时，会得到一个Future对象，可以用来得到结果或取消任务。
+- Future\<?\> submit(Runnable task)
+  - 方法返回一个Future\<?\> ，可以isDone、cancel或isCancelled。但是get方法只能简单的返回null。
+- Future\<T\> submit(Runnable task,T result)
+  - 生成一个Future，它的get方法返回指定的result对象。
+
+
+
+### 关闭
+
+使用完一个线程池时，需要调用shutdown。这个方法启动线程池的关闭序列。
+
+- 被关闭的线程不再接受新的任务。
+- 当所有任务都被完成后，线程池中的线程死亡。
+
+另一种是调用shutdownNow。
+
+- 会取消所有尚未开始的工作。
+
+
+
+### 使用线程池的工作
+
+1. 调用Executors类的静态方法newCachedThreadPool 或 newFixedThreadPool。
+2. 调用submit提交Runnable 或 Callable对象。
+3. 保存好返回的Future对象，以便得到结果或取消任务。
+4. 当不再想提交任何任务时，调用shutdown。
+
+
+
+### 重复 & 调度
+
+ScheduledExecutorService接口为调度执行 或 重复执行提供了一些方法。
+
+Executors类的`newScheduledThreadPool `和 `newSingleThreadScheduledExecutor`返回实现ScheduledExecutorService接口的对象。
+
+
+
+## 控制任务组
+
+**invokeAny**方法提交一个Callable对象集合中的所有对象，并返回**某个**已经完成的任务的结果。
+
+- 我们不知道返回哪个对象，往往是最快完成的那个。
+
+**invokAll**方法提交一个Callable对象集合中的所有对象，这个方法会<u>阻塞，直到所有任务都完成，并返回所有任务答案的一个Future对象列表</u>。
+
+- 得到任务结果后，可以这样处理：
+
+  ```java
+  List<Callable<T>> tasks = ...;
+  List<Future<T>> results = executor.invokeAll(tasks);
+  for(Future<T> result : results){
+    //处理逻辑。
+    processFurther(result.get());
+  }
+  ```
+
+
+
+如果<u>想按照计算出结果的**顺序**得到结果</u>。可以利用`ExecutorCompletionService`来管理。
+
+1. 通常方式得到一个执行器。
+2. 使用执行器executor构造一个ExecutorCompletionService。
+3. 将任务提交到这个完成服务（ExecutorCompletionService）。
+
+- 该服务会管理Future对象的一个阻塞队列，其中包含所提交任务的结果（一旦结果可用，就会放入队列）。
+
+```java
+//1 、2
+var service = new ExecutorCompletionservice<T>(executor);
+for(Callable<T> task:tasks){
+	//3
+  service.submit(task);
+}
+for(int i = 0;i< tasks.size();i++){
+  //处理逻辑
+  processFurther(service.take().get());
+}
+```
+
