@@ -1,36 +1,43 @@
-package com.yber.java.thread;
+package com.jhr.thread;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class thenComposeTest {
-  public static void main(String[] args) {
-    //
-    ExecutorService executorService = Executors.newFixedThreadPool(3);
+public class ThenComposeTest {
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-    CompletableFuture<String> f1 =
-        CompletableFuture.supplyAsync(
-            () -> {
-              try {
-                Thread.sleep(5000);
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-              }
-              System.out.println("A is OK");
-              return "A";
-            },
-            executorService);
+        //异步计算，得到ABC
+        CompletableFuture<String> f1 = CompletableFuture.supplyAsync(()->{
+            return "ABCD";
+        });
 
+        //异步计算f1结束后，根据得到的结果value 得到V类型（此处是String）新值。
+//        CompletableFuture<String> f2 = f1.thenApply((value) -> {
+//            return "123" + value;
+//        });
 
+//        异步计算f2结束后，根据得到的值value，返回V类型CompletableFuture<V>类型。
+//        异步计算f1结束后，根据得到的值value，返回V类型CompletableFuture<V>类型。
+        CompletableFuture<Integer> f3 = f1.thenCompose((value) -> {
+            return CompletableFuture.supplyAsync(() -> {
+                if (value.equalsIgnoreCase("abc")){
+                    return 123;
+                } else {
+                    return 100;
+                }
+            });
+        });
 
-    for (int i = 0; i < 10; i++) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      System.out.println("waiting");
+        try {
+//            System.out.println(f2.get());
+            System.out.println(f3.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
-
-    executorService.shutdown();
-  }
 }
