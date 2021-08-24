@@ -1,4 +1,4 @@
-package com.jhr.thread;
+package com.yber.java.thread;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
