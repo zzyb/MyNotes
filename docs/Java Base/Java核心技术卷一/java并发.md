@@ -597,3 +597,163 @@ for(int i = 0;i< tasks.size();i++){
 }
 ```
 
+
+
+## 异步计算
+
+### 可完成Future
+
+`CompletableFuture类`实现了Future接口，你要注册一个回调，一旦结果可用，就会在（某个线程中）利用该结果，调用这个回调。
+
+- 有一些API会返回CompletableFuture对象。
+
+- 大多数情况下，需要自己实现建立自己的CompletableFuture。
+
+  - **想要异步的运行任务并得到CompletableFuture**，不要直接提供给执行器，而是调用静态方法`CompletableFuture.supplyAsync`
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        CompletableFuture<String> future =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(5000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return new String("hello 异步计算");
+                },//第一个参数：Supplier<T> 不是 Callable<T>
+                executorService //第二个参数 执行器（如果省略，会在默认执行器上执行）
+        );
+        
+    
+        try {
+          String s1 = future.get();
+          System.out.println(s1);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+    
+        executorService.shutdown();
+      }
+    ```
+
+- CompletableFuture可以采用**两种方式完成**：
+
+  - 得到一个结果；
+  - 有一个未捕获的异常。
+
+  **可以使用`whenComplete方法`处理这两种情况**
+
+  ```java
+    public static void main(String[] args) {
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+      CompletableFuture<String> future =
+          CompletableFuture.supplyAsync(
+              () -> {
+                try {
+                  Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                  e.printStackTrace();
+                }
+                return new String("hello 异步计算");
+              },
+              executorService);
+  
+      //s 代表结果 ， t 代表异常。
+      future.whenComplete((s, t) -> {
+          //如果无异常
+            if (t == null) {
+                System.out.println(s);
+            } else {
+                System.out.println("no");
+            }
+          });
+  
+      executorService.shutdown();
+    }
+  ```
+
+  
+
+- CompletableFuture被称为是可完成的，你**可以手动设置一个完成值**。这样的对象被称为**承诺**。
+
+  - 显式的设置结果，将得到更大的灵活性。
+
+  ```java
+    public static void main(String[] args) {
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+      CompletableFuture<String> future = new CompletableFuture<String>();
+  
+      executorService.execute(
+          () -> {
+            try {
+              System.out.println("run 111");
+              Thread.sleep(5000);
+              // 得到其中一个结果后，可以利用这个信息(isDown)停止另一个工作。
+              boolean done = future.isDone();
+              if (done) {
+                // 如果工作已经完成，什么都不做即可
+              } else {
+                System.out.println("end 111");
+              }
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+            future.complete("need 5 second!!!");
+          });
+      executorService.execute(
+          () -> {
+            try {
+              System.out.println("run 222");
+              Thread.sleep(2000);
+              // 得到其中一个结果后，可以利用这个信息(isDown)停止另一个工作。
+              boolean done = future.isDone();
+              if (done) {
+                // 如果工作已经完成，什么都不做即可
+              } else {
+                System.out.println("end 222");
+              }
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+            future.complete("only 2 second.");
+          });
+  
+      try {
+        // 得到最快的结果，同时，慢的将执行到底，非停止！
+        System.out.println(future.get());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ExecutionException e) {
+        e.printStackTrace();
+      }
+  
+      executorService.shutdown();
+    }
+  /** OUT:
+  run 111
+  run 222
+  end 222
+  only 2 second.
+  end 111
+  */
+  ```
+
+- 要对一个异常完成Future，需要调用completeExceptionally。
+
+
+
+**可以在<u>多个线程中在同一个future上</u>安全的调用complete或者completeExceptionally。如果future已经完成，这些调用就不会起作用**。
+
+
+
+- CompletableFuture在**调用cancel方法时，计算不会中断。取消只会把这个Future设置为已异常的方式完成**。（CancellationException异常。）这与普通的Future不同。
+
+
+
+### 组合可完成Future
+
