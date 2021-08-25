@@ -23,7 +23,7 @@ public class thenApplyTest {
             },
             executorService);
 
-    CompletableFuture<String> f2 =
+    CompletableFuture<Integer> f2 =
         f1.thenApply(
             (f1Value) -> {
               try {
@@ -33,41 +33,15 @@ public class thenApplyTest {
               }
               if (f1Value.equalsIgnoreCase("a")) {
                 System.out.println("is A/a");
-                return "is A/a";
+                return 1;
               } else {
                 System.out.println("not Is A/a");
-                return "not Is A/a";
+                return 0;
               }
             });
 
-    //    CompletableFuture<String> f3 =
-    //        f1.thenApplyAsync(
-    //            (f1Value) -> {
-    //              try {
-    //                Thread.sleep(3000);
-    //              } catch (InterruptedException e) {
-    //                e.printStackTrace();
-    //              }
-    //              if (f1Value.equalsIgnoreCase("a")) {
-    //                System.out.println("is A/a");
-    //                return "is A/a";
-    //              } else {
-    //                  System.out.println("not Is A/a");
-    //                  return "not Is A/a";
-    //              }
-    //            });
-    for (int i = 0; i < 10; i++) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      System.out.println("waiting");
-    }
-
     try {
-      System.out.println("1 " + f2.get());
-      //          System.out.println("1 "+f3.get());
+      System.out.println(f2.get());
     } catch (InterruptedException e) {
       e.printStackTrace();
     } catch (ExecutionException e) {

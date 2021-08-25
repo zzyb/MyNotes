@@ -33,16 +33,17 @@ public class RunAfterBothTest {
               return "-XYZ";
             });
 
-      try {
-          f1.runAfterBoth(
+    try {
+      f1.runAfterBoth(
               f2,
               () -> {
                 System.out.println("hello");
-              }).get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
+              })
+          .get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 }

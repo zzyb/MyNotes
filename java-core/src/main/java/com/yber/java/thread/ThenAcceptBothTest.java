@@ -33,17 +33,18 @@ public class ThenAcceptBothTest {
               return "-XYZ";
             });
 
-      try {
-          f1.thenAcceptBoth(
+    try {
+      f1.thenAcceptBoth(
               f2,
               (value1, value2) -> {
                 System.out.println(value1);
                 System.out.println(value2);
-              }).get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
+              })
+          .get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -33,19 +33,19 @@ public class RunAfterEitherTest {
               return "-XYZ";
             });
 
-      CompletableFuture<Void> voidF3 = f1.runAfterEither(
-              f2,
-              () -> {
-                  System.out.println("hello,i get someOne");
-              });
+    CompletableFuture<Void> voidF3 =
+        f1.runAfterEither(
+            f2,
+            () -> {
+              System.out.println("hello,i get someOne");
+            });
 
-      try {
-          voidF3.get();
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
-
+    try {
+      voidF3.get();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 }

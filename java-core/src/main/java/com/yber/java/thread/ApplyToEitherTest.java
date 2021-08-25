@@ -33,17 +33,19 @@ public class ApplyToEitherTest {
               return "-XYZ";
             });
 
-      CompletableFuture<String> f3 = f1.applyToEither(f2, (value) -> {
-          return "is :" + value;
-      });
+    CompletableFuture<String> f3 =
+        f1.applyToEither(
+            f2,
+            (value) -> {
+              return "is :" + value;
+            });
 
-      try {
-          System.out.println(f3.get());
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
-
+    try {
+      System.out.println(f3.get());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -757,3 +757,630 @@ for(int i = 0;i< tasks.size();i++){
 
 ### 组合可完成Future
 
+- **将异步组合为一个处理管线。**
+
+- `thenApply(f)方法`，f是一个函数 。
+
+  - 该方法不会阻塞。它会返回另一个future。当第一个future完成时，其结果会提供给f，这个函数f会返回最终结果。
+
+  - f接受类型为T的值，返回类型为U的值。
+
+    ```java
+    CompletableFuture<U> future.thenApply(f);
+    CompletableFuture<U> future.thenApplyAsync(f);//该调用会在另一个线程中调用f。
+    //都会返回一个future。
+    //结果可用时，会对future的结果应用f。
+    ```
+
+    ```java
+      public static void main(String[] args) {
+        //
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(5000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  System.out.println("A is OK");
+                  return "A";
+                },
+                executorService);
+    
+        CompletableFuture<Integer> f2 =
+            f1.thenApply(
+                //这个就是函数f，此处接受T为String，返回U为Integer。
+                (f1Value) -> {
+                  try {
+                    Thread.sleep(3000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  if (f1Value.equalsIgnoreCase("a")) {
+                    System.out.println("is A/a");
+                    return 1;
+                  } else {
+                    System.out.println("not Is A/a");
+                    return 0;
+                  }
+                });
+    
+        try {
+          System.out.println(f2.get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+    
+    ```
+
+- `thenCompose方法`<u>没有取将T映射到U</u>，而是接受一个<u>从T映射到CompletableFuture\<U\></u>的函数。
+
+  ```java
+    public static void main(String[] args) {
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+  
+      // 异步计算，得到ABCD
+      CompletableFuture<String> f1 =
+          CompletableFuture.supplyAsync(
+              () -> {
+                return "ABCD";
+              });
+  
+      // 异步计算f1结束后，根据得到的值value，返回V类型CompletableFuture<V>类型。
+      CompletableFuture<Integer> f3 =
+          f1.thenCompose(
+              (value) -> {
+                return CompletableFuture.supplyAsync(
+                    () -> {
+                      if (value.equalsIgnoreCase("abc")) {
+                        return 123;
+                      } else {
+                        return 100;
+                      }
+                    });
+              });
+  
+      try {
+        System.out.println(f3.get());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ExecutionException e) {
+        e.printStackTrace();
+      }
+    }
+  ```
+
+- `handle方法` 需要一个函数处理结果或异常，并计算一个新结果。
+
+  ```java
+    public static void main(String[] args) {
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+  
+      // 异步计算，得到ABCD
+      CompletableFuture<String> f1 =
+          CompletableFuture.supplyAsync(
+              () -> {
+                return "ABCD";
+              });
+  
+      //        异步计算f1结束后，根据得到的值value，返回V类型CompletableFuture<V>类型。
+      CompletableFuture<Serializable> handle =
+          f1.handle(
+              (value, ex) -> {
+                if (ex != null) {
+                  System.out.println("exception:" + ex);
+                  return ex;
+                } else {
+                  System.out.println("value:" + value);
+                  return value;
+                }
+              });
+  
+      try {
+        System.out.println(handle.get());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ExecutionException e) {
+        e.printStackTrace();
+      }
+    }
+  ```
+
+- `exceptionally方法` 出现一个异常时，这个方法会计算一个假值。
+
+  ```java
+    public static void main(String[] args) {
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+  
+      // 异步计算，得到ABCD
+      CompletableFuture<String> f1 =
+          CompletableFuture.supplyAsync(
+              () -> {
+                return "ABCD";
+              });
+  
+      //        异步计算f1结束后，如果出现异常，则得到一个假值abcd。
+      CompletableFuture<String> f2 =
+          f1.exceptionally(
+              (ex) -> {
+                return "abcd";
+              });
+  
+      try {
+        //如果exceptionally出现异常，这里会返回abcd。
+        System.out.println(f2.get());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ExecutionException e) {
+        e.printStackTrace();
+      }
+    }
+  ```
+
+- 两个来自JDK 9 的方法。`completeOnTimeout(T,long,TimeUnit)`  ， `orTimeout(long,TimeUnit)`
+
+  - `completeOnTimeout(T,long,TimeUnit)` 
+
+    ```java
+      /**
+       * in Java 9!!!
+       *
+       * @param args
+       */
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD 这里等待4秒
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+          //这里设置3秒就会超时。因此会得到超时结果xyz
+            f1.completeOnTimeout("xyz", 3, TimeUnit.SECONDS)
+                .thenApply(
+                    (value) -> {
+                      return value;
+                    });
+        try {
+          System.out.println(f2.get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  -  `orTimeout(long,TimeUnit)`
+
+    ```java
+      /**
+       * in Java 9!!!
+       *
+       * @param args
+       */
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABC
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        // 超时，抛出TimeoutException异常.
+        CompletableFuture<String> f2 =
+            f1.orTimeout(3, TimeUnit.SECONDS)
+                .thenApply(
+                    (value) -> {
+                      return value;
+                    });
+    
+        try {
+          System.out.println(f2.get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+### 组合多个组合对象
+
+- 并发的运行一个CompletableFuture\<T\> 和一个 CompletableFuture\<U\>动作，组合结果。
+
+  - thenCombine
+
+    - 执行**两个动作**，并用<u>给定函数</u>**组合结果**。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<String> f3 =
+            f1.thenCombine(
+                f2,
+                (value1, value2) -> {
+                  return value1 + value2;
+                });
+    
+        try {
+          System.out.println(f3.get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  - thenAcceptBoth
+
+    - 执行**两个动作**，并用<u>给定函数</u>**组合结果**。返回值时void。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        try {
+          f1.thenAcceptBoth(
+                  f2,
+                  (value1, value2) -> {
+                    System.out.println(value1);
+                    System.out.println(value2);
+                  })
+              .get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  - runAfterBoth
+
+    - <u>两个都执行后，执行runnable</u>。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        try {
+          f1.runAfterBoth(
+                  f2,
+                  () -> {
+                    System.out.println("hello");
+                  })
+              .get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+- 并发的运行**两个**CompletableFuture\<T\>，其中一个动作完成，就 传递它的结果，并忽略另一个结果。
+
+  - applyToEither
+
+    - 得到**其中一个**结果时，传入给定函数。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<String> f3 =
+            f1.applyToEither(
+                f2,
+                (value) -> {
+                  return "is :" + value;
+                });
+    
+        try {
+          System.out.println(f3.get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  - acceptEither
+
+    - 得到**其中一个**结果时，传入给定函数。返回值时void
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<Void> voidF3 =
+            f1.acceptEither(
+                f2,
+                (value) -> {
+                  System.out.println(value);
+                });
+        try {
+          voidF3.get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  - runAfterEither
+
+    - 其中一个完成后，执行Runnable。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<Void> voidF3 =
+            f1.runAfterEither(
+                f2,
+                () -> {
+                  System.out.println("hello,i get someOne");
+                });
+    
+        try {
+          voidF3.get();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+- 静态方法allOf 和 anyOf 取一组可完成future（数目可变），并生成一个CompletableFuture\<void\>。
+
+  - allOf **所有**future都完成时结束。不会生成任何结果。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  System.out.println("f3 is down");
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  System.out.println("f2 is down");
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<Void> voidAllF3 = CompletableFuture.allOf(f1, f2);
+    
+        try {
+          voidAllF3.get();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+  - anyOf <u>任意一个</u>future完成时结束。anyOf不会终止其余任何方法。
+
+    ```java
+      public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+    
+        // 异步计算，得到ABCD
+        CompletableFuture<String> f1 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(4000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  System.out.println("f3 is down");
+                  return "ABCD";
+                });
+    
+        CompletableFuture<String> f2 =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    Thread.sleep(2000);
+                  } catch (InterruptedException e) {
+                    e.printStackTrace();
+                  }
+                  System.out.println("f2 is down");
+                  return "-XYZ";
+                });
+    
+        CompletableFuture<Object> voidAllF3 = CompletableFuture.anyOf(f1, f2);
+    
+        try {
+          voidAllF3.get();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        }
+      }
+    ```
+
+    

@@ -33,19 +33,18 @@ public class AcceptEitherTest {
               return "-XYZ";
             });
 
-      CompletableFuture<Void> voidF3 = f1.acceptEither(
-              f2,
-              (value) -> {
-                  System.out.println(value);
-              });
-      try {
-          voidF3.get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
-      } catch (InterruptedException e) {
-          e.printStackTrace();
-      } catch (ExecutionException e) {
-          e.printStackTrace();
-      }
-
-
+    CompletableFuture<Void> voidF3 =
+        f1.acceptEither(
+            f2,
+            (value) -> {
+              System.out.println(value);
+            });
+    try {
+      voidF3.get(); // 此处的get很重要。获取执行的结果。如果没有，则可能造成没有输出。
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 }
