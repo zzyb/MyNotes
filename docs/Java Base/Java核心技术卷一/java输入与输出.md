@@ -484,6 +484,8 @@ RandomAccessFile类可以在任何位置查找或写入数据。
 
 ## 操作文件
 
+### Path
+
 Path（路径）表示一个目录名序列，后面还可以跟一个文件名。
 
 路径中的第一个部分可以是`根部件`例如：“/”、“D:\”，允许访问的跟部件取决于文件系统。
@@ -512,19 +514,155 @@ Path（路径）表示一个目录名序列，后面还可以跟一个文件名�
 
 #### 组合或解析路径
 
-
+- `resolve()`方法   【resolve 分解】
+  - **path.resolve(path2) **返回一个路径:
+    - 如果path2是绝对路径，就返回这个绝对路径path2
+    - 否则，根据文件系统规则，path后面跟着path2作为结果。
+  - resolve有一个快捷方式，可以接受字符串，而不是Path`path.resolve("serverLog.log")`
 
 ```java
   public static void main(String[] args) {
     Path path = Paths.get("/opt/kafka/log");
-    Path path2 = Paths.get("server.log");
+    Path path2 = Paths.get("log-cleaner.log");
     Path path3 = Paths.get("/opt/kafka/log/controller.log");
-    System.out.println(path.toAbsolutePath());
-    System.out.println(path2.toAbsolutePath());
-    Path resolve = path.resolve(path2);
-    System.out.println(resolve.toAbsolutePath());
-    Path resolve2 = path.resolve(path3);
-    System.out.println(resolve2.toAbsolutePath());
+    System.out.println(path.toString());
+    System.out.println(path2.toString());
+    System.out.println(path.resolve(path2));
+    System.out.println(path.resolve(path3));
   }
+/** 输出：
+    /opt/kafka/log
+    log-cleaner.log
+    /opt/kafka/log/log-cleaner.log
+    /opt/kafka/log/controller.log
+*/
+
 ```
 
+- `resolveSibling()`方法
+
+  - 通过解析路径的父路径产生兄弟路径。
+
+    ```java
+      public static void main(String[] args) {
+        Path path = Paths.get("/opt/kafka/log");
+        Path path2 = Paths.get("conf");
+        System.out.println(path);
+        System.out.println(path.resolveSibling(path2));//解析父路径 -> /opt/kafka/ 然后产生兄弟路径 /opt/kafka/conf
+      }
+    /** 输出：
+    	/opt/kafka/log
+    	/opt/kafka/conf
+    */
+    ```
+
+    
+
+- `relativize()`方法。【relativize 使相对化】
+
+  - path.relativize(path2)产生路径path3。而path对path3解析（resolve）的结果就是path2。
+
+  - **resolve的对立面是relativize**。
+
+    ```java
+      public static void main(String[] args) {
+        Path path = Paths.get("/opt/kafka/log/server.log");
+        Path path2 = Paths.get("/opt/kafka/conf");
+        Path path3 = path.relativize(path2);
+        System.out.println(path3);
+        System.out.println(path.resolve(path3));
+    /** 输出：
+      ../../conf 
+      /opt/kafka/log/server.log/../../conf
+    */
+      }
+    ```
+
+- `normalize()`方法。
+
+  - 移除所有冗余的.和..部件。
+
+    ```java
+      public static void main(String[] args) {
+        Path path = Paths.get("/opt/kafka/log/server.log/../../conf");
+        System.out.println(path.normalize());
+      }
+    ```
+
+- `toAbsolutePath()`方法。
+
+  - 产生给定路径的绝对路径。该绝对路径从跟部件开始。
+
+- 一些断开路径的方法。
+
+  - path.getParent()方法。
+  - path.getFileName()方法。
+  - path.getRoot()方法。
+
+```java
+  public static void main(String[] args) {
+    Path path = Paths.get("/opt/kafka/log/server.log");
+    System.out.println(path.toAbsolutePath());
+    System.out.println(path.getParent());
+    System.out.println(path.getFileName());
+    System.out.println(path.getRoot());
+  }
+/**
+    /opt/kafka/log/server.log
+    /opt/kafka/log
+    server.log
+    /
+*/
+```
+
+
+
+### 读写文件 - Files类
+
+- 读取为字节数组。
+
+
+
+- 直接读取为文件内容（不宜过大）。
+
+
+
+- 将文件按行当作序列读入。
+
+
+
+- 向一个文件追加内容。
+
+
+
+- 讲一个行的集合写出到文件。
+
+
+
+- 如果文件长度比较大，或者二进制文件。使用输入输出流、读入器/写出器。
+
+
+
+
+
+### 创建文件和目录
+
+
+
+### 复制、移动和删除文件
+
+
+
+### 获取文件信息
+
+
+
+### 访问目录中的项
+
+
+
+### 使用目录流
+
+
+
+### ZIP文件系统
