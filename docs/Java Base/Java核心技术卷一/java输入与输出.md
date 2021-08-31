@@ -87,7 +87,7 @@ out.write(values);
 
 
 
-## 组合输入输出流过滤器
+### 组合输入输出流过滤器
 
 - Java使用了一种非常灵巧的机制来分离职责：
 
@@ -150,7 +150,7 @@ System.out.println("回推后可用字节：" + pis.available());
 
 
 
-## 文本输入与输出
+### 文本输入与输出
 
 - 保存数据时，可以选择<u>二进制格式</u>或<u>文本格式</u>。
   - 存储文本字符串时，需要考虑字符编码方式。Java内部使用 UTF-16 编码方式。
@@ -159,7 +159,7 @@ System.out.println("回推后可用字节：" + pis.available());
 
 
 
-## 写出文本输出
+### 写出文本输出
 
 - 使用PrintWriter类。
 
@@ -188,7 +188,7 @@ System.out.println("回推后可用字节：" + pis.available());
 
   
 
-## 读入文本输入
+### 读入文本输入
 
 - Scanner类：从任何<u>输入流构建Scanner对象</u>。
 
@@ -300,7 +300,7 @@ System.out.println("回推后可用字节：" + pis.available());
 
   
 
-## 字符编码方式
+### 字符编码方式
 
 **字符如何编码成字节？**
 
@@ -423,7 +423,7 @@ Charset shiftJIS = Charset.forName("Shift-JIS");
 
 
 
-## 随机访问文件
+### 随机访问文件
 
 RandomAccessFile类可以在任何位置查找或写入数据。
 
@@ -477,4 +477,54 @@ RandomAccessFile类可以在任何位置查找或写入数据。
 ### 保存和加载序列化对象
 
 
+
+
+
+
+
+## 操作文件
+
+Path（路径）表示一个目录名序列，后面还可以跟一个文件名。
+
+路径中的第一个部分可以是`根部件`例如：“/”、“D:\”，允许访问的跟部件取决于文件系统。
+
+1. 跟部件开始的路径是绝对路径，否则就是相对路径。
+
+
+
+- `Paths.get()`方法接受一个或多个字符串，并将它们用默认文件系统分隔符连接起来。
+  - UNIX是/，Windows是\。
+  - 如果表示的不是给定文件系统的合法路径，那么就抛出异常InvalidPathException。
+  - **路径不必对应着某个实际存在的文件，它仅仅是一个抽象的名字序列**。
+
+```java
+  public static void main(String[] args) {
+    Path path = Paths.get("/opt", "zookeeper.out");
+    System.out.println(path.toAbsolutePath());
+    boolean flag1 = path.endsWith("out");  // false
+    boolean flag2 = path.endsWith("zookeeper.out"); //true
+    System.out.println(flag1);
+    System.out.println(flag2);
+  }
+```
+
+
+
+#### 组合或解析路径
+
+
+
+```java
+  public static void main(String[] args) {
+    Path path = Paths.get("/opt/kafka/log");
+    Path path2 = Paths.get("server.log");
+    Path path3 = Paths.get("/opt/kafka/log/controller.log");
+    System.out.println(path.toAbsolutePath());
+    System.out.println(path2.toAbsolutePath());
+    Path resolve = path.resolve(path2);
+    System.out.println(resolve.toAbsolutePath());
+    Path resolve2 = path.resolve(path3);
+    System.out.println(resolve2.toAbsolutePath());
+  }
+```
 
