@@ -1,4 +1,4 @@
-package com.jhr.algorithms.sort.custom;
+package com.yber.java;
 
 public class Student implements Comparable<Student> {
     private final String name;

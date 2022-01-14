@@ -1,5 +1,4 @@
-package com.jhr.algorithms.sort.custom;
-
+package com.yber.java;
 /******************************************************************************
  *  Compilation:  javac Date.java
  *  Execution:    java Date
