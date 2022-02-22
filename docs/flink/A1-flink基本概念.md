@@ -10,17 +10,17 @@
 
 ![](./flink基础.resource/flink-stack.png)
 
-- api & libraries 层
+- **api & libraries 层**
 
-编程API，顶级类库。
+  ​	编程API，顶级类库。
 
-- Runtime核心层
+- Runtime**核心层**
 
-核心实现层，包括作业转换，任务调度，资源分配，任务执行等。
+  ​	核心实现层，包括作业转换，任务调度，资源分配，任务执行等。
 
-- 物理部署层
+- 物理**部署层**
 
-不同平台(本地、集群【standalone/yarn】、云【GCE/EC2】)部署flink应用。
+  ​	不同平台(本地、集群【standalone/yarn】、云【GCE/EC2】)部署flink应用。
 
 ## flink集群架构
 
@@ -88,3 +88,10 @@ TaskManagers 实际执行的是 SubTask，而不是 Task，这里解释一下两
 
 ![](./flink基础.resource/flink-process.png)
 
+
+
+
+
+## 注释：
+
+Dispatcher 发报机
