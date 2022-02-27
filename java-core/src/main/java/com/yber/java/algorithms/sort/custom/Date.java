@@ -1,4 +1,4 @@
-package com.jhr.algorithms.sort.custom;
+package com.yber.java.algorithms.sort.custom;
 
 /******************************************************************************
  *  Compilation:  javac Date.java
@@ -20,7 +20,7 @@ package com.jhr.algorithms.sort.custom;
  * @author Robert Sedgewick
  * @author Kevin Wayne
  */
-public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Date> {
+public class Date implements Comparable<Date> {
     private static final int[] DAYS = {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     private final int month;   // month (between 1 and 12)
@@ -107,10 +107,10 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
      *
      * @return a date that represents the next day after this day
      */
-    public com.yber.java.algorithms.sort.custom.Date next() {
-        if (isValid(month, day + 1, year)) return new com.yber.java.algorithms.sort.custom.Date(month, day + 1, year);
-        else if (isValid(month + 1, 1, year)) return new com.yber.java.algorithms.sort.custom.Date(month + 1, 1, year);
-        else return new com.yber.java.algorithms.sort.custom.Date(1, 1, year + 1);
+    public Date next() {
+        if (isValid(month, day + 1, year)) return new Date(month, day + 1, year);
+        else if (isValid(month + 1, 1, year)) return new Date(month + 1, 1, year);
+        else return new Date(1, 1, year + 1);
     }
 
     /**
@@ -119,7 +119,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
      * @param that the other date
      * @return {@code true} if this date is after that date; {@code false} otherwise
      */
-    public boolean isAfter(com.yber.java.algorithms.sort.custom.Date that) {
+    public boolean isAfter(Date that) {
         return compareTo(that) > 0;
     }
 
@@ -129,7 +129,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
      * @param that the other date
      * @return {@code true} if this date is before that date; {@code false} otherwise
      */
-    public boolean isBefore(com.yber.java.algorithms.sort.custom.Date that) {
+    public boolean isBefore(Date that) {
         return compareTo(that) < 0;
     }
 
@@ -142,7 +142,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
      * chronologically after the argument date
      */
     @Override
-    public int compareTo(com.yber.java.algorithms.sort.custom.Date that) {
+    public int compareTo(Date that) {
         if (this.year < that.year) return -1;
         if (this.year > that.year) return +1;
         if (this.month < that.month) return -1;
@@ -173,7 +173,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
         if (other == this) return true;
         if (other == null) return false;
         if (other.getClass() != this.getClass()) return false;
-        com.yber.java.algorithms.sort.custom.Date that = (com.yber.java.algorithms.sort.custom.Date) other;
+        Date that = (Date) other;
         return (this.month == that.month) && (this.day == that.day) && (this.year == that.year);
     }
 
@@ -193,7 +193,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
      * @param args the command-line arguments
      */
     public static void main(String[] args) {
-        com.yber.java.algorithms.sort.custom.Date today = new com.yber.java.algorithms.sort.custom.Date(2, 25, 2004);
+        Date today = new Date(2, 25, 2004);
         System.out.println(today);
         for (int i = 0; i < 10; i++) {
             today = today.next();
@@ -205,7 +205,7 @@ public class Date implements Comparable<com.yber.java.algorithms.sort.custom.Dat
         System.out.println(today.next().isAfter(today));
 
 
-        com.yber.java.algorithms.sort.custom.Date birthday = new com.yber.java.algorithms.sort.custom.Date(10, 16, 1971);
+        Date birthday = new Date(10, 16, 1971);
         System.out.println(birthday);
         for (int i = 0; i < 10; i++) {
             birthday = birthday.next();

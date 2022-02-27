@@ -1,6 +1,6 @@
-package com.jhr.algorithms.sort.custom;
+package com.yber.java.algorithms.sort.custom;
 
-public class Student implements Comparable<com.yber.java.algorithms.sort.custom.Student> {
+public class Student implements Comparable<Student> {
     private final String name;
     private final int credit;
 
@@ -26,7 +26,7 @@ public class Student implements Comparable<com.yber.java.algorithms.sort.custom.
     }
 
     @Override
-    public int compareTo(com.yber.java.algorithms.sort.custom.Student o) {
+    public int compareTo(Student o) {
         if (this.credit > o.credit) {
             return 1;
         } else if (this.credit < o.credit) {
@@ -37,9 +37,9 @@ public class Student implements Comparable<com.yber.java.algorithms.sort.custom.
     }
 
     public static void main(String[] args) {
-        com.yber.java.algorithms.sort.custom.Student tom = new com.yber.java.algorithms.sort.custom.Student("tom", 88);
-        com.yber.java.algorithms.sort.custom.Student liliX = new com.yber.java.algorithms.sort.custom.Student("liliX", 88);
-        com.yber.java.algorithms.sort.custom.Student dopa = new com.yber.java.algorithms.sort.custom.Student("dopa", 100);
+        Student tom = new Student("tom", 88);
+        Student liliX = new Student("liliX", 88);
+        Student dopa = new Student("dopa", 100);
 
 
         System.out.println(tom.toString());

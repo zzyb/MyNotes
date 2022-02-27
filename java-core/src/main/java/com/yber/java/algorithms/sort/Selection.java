@@ -1,4 +1,4 @@
-package com.jhr.algorithms.sort;
+package com.yber.java.algorithms.sort;
 
 /******************************************************************************
  *  Compilation:  javac Selection.java
