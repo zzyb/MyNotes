@@ -16,6 +16,71 @@
 
     Flink API 期望 `WatermarkStrategy`同时包含 a `TimestampAssigner`和`WatermarkGenerator`.`WatermarkStrategy`有许多常用策略作为静态方法开箱即用，除此之外用户也可以在需要时构建自己的策略。
 
+**静态方法**：
+
+- `WatermarkStrategy<T> forBoundedOutOfOrderness(Duration maxOutOfOrderness)`
+
+  周期性的。这种水印策略引入的延迟是周期性间隔长度，加上绑定的界限。
+
+  ```java
+  //
+  WatermarkStrategy
+       // 水印,这里设定的是任意新到元素和已到时间戳最大元素之间的时间差上限。
+       // Tuple4 数据示例：(北京,购买,2022-03-03 11:15:20.373,1)
+      .<Tuple4<String, String, String, Integer>>forBoundedOutOfOrderness(Duration.ofSeconds(10))
+      //lambda表达式获取数据时间戳
+      .withTimestampAssigner((event, timestamp) -> {
+          try {
+              return format.parse(event.f2).getTime();
+          } catch (ParseException e) {
+              return 0L;
+          }
+      })    // 时间戳分配器 -- lambda获取时间戳;(可选的)
+  ```
+
+- `WatermarkStrategy<T> forMonotonousTimestamps()`
+
+  周期性的，并紧紧地遵循数据中的最新时间戳。通过该策略引入的延迟主要是生成水印的周期性间隔。
+
+  ```java
+  WatermarkStrategy
+       // 水印,这里设定的是时间元素时间戳。
+       // Tuple4 数据示例：(北京,购买,2022-03-03 11:15:20.373,1)
+      .<Tuple4<String, String, String, Integer>>forMonotonousTimestamps()
+      .withTimestampAssigner(
+      (event, timestamp) -> {
+          try {
+              return format.parse(event.f2).getTime();
+          } catch (ParseException e) {
+              return 0L;
+          }
+      }
+  )
+  ```
+
+- `WatermarkStrategy<T> noWatermarks()`
+
+  没有生产水印。这在做基于纯处理时间的流处理的场景中可能是有用的。
+
+  ```java
+  SingleOutputStreamOperator singleOutputStreamOperator = dataSource.assignTimestampsAndWatermarks(
+      WatermarkStrategy
+      .<Tuple4<String, String, String, Integer>>noWatermarks()//水印追随时间戳。
+  );
+  
+  singleOutputStreamOperator.keyBy(new KeySelector<Tuple4<String,String,String,Integer>,String>() {
+      @Override
+      public String getKey(Tuple4<String, String, String, Integer> value) throws Exception {
+          return value.f1;
+      }
+  })
+      // 采用处理时间，不需要水印推进
+      .windowAll(TumblingProcessingTimeWindows.of(Time.milliseconds(5000)))
+      .sum(3).print();
+  ```
+
+  
+
 **WatermarkStrategy接口代码**：
 
 TimestampAssigner接口：用于从已读入流式应用的元素中提取时间戳。（时间戳分配器）
@@ -172,6 +237,25 @@ public class PunctuatedAssigner implements WatermarkGenerator<MyEvent> {
 **注意**：可以在每个事件上生成水印。但是，由于每个水印都会导致一些下游计算，因此过多的水印会降低性能。
 
 ## 水位线与分区
+
+Flink 会将<u>数据流划分为不同的分区</u>，并将它们交由不同的算子任务来<u>并行执行</u>。**每个分区**作为一个数据流，**都会包含带有时间戳的记录以及水位线**。
+
+根据任务连接情况，其任务可能需要同时接受多个输入分区的记录和水位线，也可能需要将他们发送到多个输出分区。
+
+于是有两个问题需要我们探究：
+
+1. 如何将水位线发送到多个输出任务？
+2. 从多个输出任务获取水位线后如何推动事件时间时钟前进？
+
+回答分割线：
+
+​	一个任务会为它的每个输入分区都维护一个分区水位线。（partition watermark）。
+
+①.当收到某个分区传来的水位线后，任务会以接收值和当前值中较大的那个去更新对应分区的水位线的值。
+
+②.随后，任务会把事件时间时钟调整为所有分区水位线中最小的那个值。（如果事件时间时钟向前推进，任务会首先处理因此而触发的所有计时器，之后才会把对应的水位线发往所有相连的输出分区，从而实现事件时间到全部下游的广播。）
+
+![水位线与分区](.\Flink时间戳与水位线.resource\水位线与分区.bmp)
 
 ## 水位线的取舍
 
