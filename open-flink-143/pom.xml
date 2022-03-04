@@ -2,18 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>bigdata-zyb</artifactId>
-        <groupId>com.yber</groupId>
-        <version>1.0</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>open-flink-14</artifactId>
+    <groupId>com.zyb.bigdata</groupId>
+    <artifactId>open-flink-143</artifactId>
+    <version>1.0</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <scala.binary.version>2.11</scala.binary.version>
+        <flink.version>1.14.3</flink.version>
+        <target.java.version>8</target.java.version>
     </properties>
 
     <dependencies>
@@ -21,31 +21,32 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
         </dependency>
         <!-- 日志-2 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
         </dependency>
 
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-walkthrough-common_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
         </dependency>
 
         <!-- This dependency is provided, because it should not be packaged into the JAR file. -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
-            <scope>compile</scope>
-<!--            <scope>provided</scope>-->
+            <version>${flink.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-clients_${scala.binary.version}</artifactId>
-            <scope>compile</scope>
-<!--            <scope>provided</scope>-->
+            <version>${flink.version}</version>
         </dependency>
     </dependencies>
 
@@ -68,7 +69,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <!--                <version>3.2.4</version>-->
                 <executions>
                     <!-- Run shade goal on package phase -->
                     <execution>
@@ -154,4 +155,5 @@
             </plugins>
         </pluginManagement>
     </build>
+
 </project>
