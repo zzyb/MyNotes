@@ -79,9 +79,25 @@ public class FlinkTypes4CoProcessTest {
         );
 
         connectedStreams.process(new CoProcessFunction<Tuple4<String,String,String,Integer>,Tuple2<String,Long>,Tuple4<String,String,String,Integer>>() {
+
+            private transient ValueStateDescriptor<Boolean> dataEnable;
+            private transient ValueState<Boolean> dataEnableState;
+
+            private transient ValueStateDescriptor<Long> disableTimer;
+            private transient ValueState<Long> disableTimerState;
+
+            @Override
+            public void open(Configuration parameters) throws Exception {
+                dataEnable = new ValueStateDescriptor<Boolean>("dataEnable",Types.BOOLEAN);
+                dataEnableState = getRuntimeContext().getState(dataEnable);
+
+                disableTimer = new ValueStateDescriptor<Long>("disableTimer",Types.LONG);
+                disableTimerState = getRuntimeContext().getState(disableTimer);
+            }
+
             @Override
             public void processElement1(Tuple4<String, String, String, Integer> value, Context context, Collector<Tuple4<String, String, String, Integer>> collector) throws Exception {
-
+                
             }
 
             @Override
