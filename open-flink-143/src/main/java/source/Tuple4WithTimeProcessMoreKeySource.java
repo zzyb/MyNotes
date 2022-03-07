@@ -8,12 +8,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
-public class Tuple4WithTimeProcessSource extends RichSourceFunction<Tuple4<String, String, String,Integer>> {
+public class Tuple4WithTimeProcessMoreKeySource extends RichSourceFunction<Tuple4<String, String, String,Integer>> {
     Random random = null;
     Tuple4 value = null;
     SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
-    String [] city = {"北京"};
-//    String [] city = {"北京","上海","郑州"};
+    String [] city = {"北京","上海","郑州"};
     String [] type = {"购买","出售"};
 
     long maxLong = 0L;

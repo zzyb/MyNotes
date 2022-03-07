@@ -16,7 +16,7 @@ package run.process;/*
  * limitations under the License.
  */
 
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.eventtime.*;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -28,14 +28,16 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
-import source.Tuple4WithTimeProcessSource;
+import source.Tuple4WithTimeProcessSingleKeySource;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 
 /**
  * DataSource
  */
-public class FlinkTypes4KeyByProcessTest {
+public class FlinkTypes4KeyByProcessUseEventTimeTest {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
@@ -43,10 +45,25 @@ public class FlinkTypes4KeyByProcessTest {
                 .getExecutionEnvironment().setParallelism(1);
 
         // 数据源为：(北京,购买,2022-03-04 17:20:57,1) 四元组
-        DataStreamSource dataSource = env.addSource(new Tuple4WithTimeProcessSource());
+        DataStreamSource dataSource = env.addSource(new Tuple4WithTimeProcessSingleKeySource());
 
+        // 获取数据中的事件时间 并 指定水位线生成方式.
+        SingleOutputStreamOperator singleOutputStreamOperator = dataSource.assignTimestampsAndWatermarks(
+                WatermarkStrategy
+                        // 水位线紧随事件时间
+                        .<Tuple4<String, String, String, Integer>>forBoundedOutOfOrderness(Duration.ZERO)
+                        .withTimestampAssigner(
+                                (event, timestamp) -> {
+                                    try {
+                                        return format.parse(event.f2).getTime();
+                                    } catch (ParseException e) {
+                                        return 0L;
+                                    }
+                                }
+                        )
+        );
 
-        dataSource
+       singleOutputStreamOperator
                 // 以 第一个为 key分区
                 .keyBy(new KeySelector<Tuple4<String, String, String, Integer>, String>() {
                     @Override
@@ -54,6 +71,7 @@ public class FlinkTypes4KeyByProcessTest {
                         return value.f0;
                     }
                 })
+
                 // 创建处理函数 <key,In,Out>
                 .process(new KeyedProcessFunction<String, Tuple4<String, String, String, Integer>, Tuple4<String, String, String, String>>() {
 
@@ -82,7 +100,9 @@ public class FlinkTypes4KeyByProcessTest {
                         // 此处创建处理时间计时器。
                         if(pervType.equals("出售") && value.f1.equals("出售")){
                             // 达到条件，此处设置当前时间两秒后告警。
-                            ctx.timerService().registerProcessingTimeTimer(System.currentTimeMillis() + 2000L);
+//                            ctx.timerService().registerProcessingTimeTimer(System.currentTimeMillis() + 2000L);
+                            // 注册 事件时间定时器
+                            ctx.timerService().registerEventTimeTimer(ctx.timerService().currentWatermark());
                         }
                         Tuple4 t4 = new Tuple4<String,String,String,String>();
                         t4.setFields(value.f0,value.f1,value.f2,"1");

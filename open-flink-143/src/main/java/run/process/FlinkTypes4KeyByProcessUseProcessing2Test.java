@@ -26,14 +26,14 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
-import source.Tuple4WithTimeProcessSource;
+import source.Tuple4WithTimeProcessSingleKeySource;
 
 import java.text.SimpleDateFormat;
 
 /**
  * DataSource
  */
-public class FlinkTypes4KeyByProcess2Test {
+public class FlinkTypes4KeyByProcessUseProcessing2Test {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
@@ -41,7 +41,7 @@ public class FlinkTypes4KeyByProcess2Test {
                 .getExecutionEnvironment().setParallelism(1);
 
         // 数据源为：(北京,购买,2022-03-04 17:20:57,1) 四元组
-        DataStreamSource dataSource = env.addSource(new Tuple4WithTimeProcessSource());
+        DataStreamSource dataSource = env.addSource(new Tuple4WithTimeProcessSingleKeySource());
 
 
         dataSource
@@ -56,31 +56,46 @@ public class FlinkTypes4KeyByProcess2Test {
                 .process(new KeyedProcessFunction<String, Tuple4<String, String, String, Integer>, Tuple4<String, String, String, String>>() {
 
                     // 声明状态，用于在处理过程中收集上一个元素的特定值。
-                    private transient ValueStateDescriptor<String> last;
-                    private transient ValueState<String> lastState ;
+                    private transient ValueStateDescriptor<String> lastType;
+                    private transient ValueState<String> lastTypeState;
+
+                    private transient ValueStateDescriptor<Long> currentTimeStamp ;
+                    private transient ValueState<Long> currentTimeStampState ;
 
                     @Override
                     //状态在open方法中被创建。
                     public void open(Configuration parameters) throws Exception {
-                        last = new ValueStateDescriptor<String>("lastValue",Types.STRING);
-                        lastState = getRuntimeContext().getState(last);
+                        lastType = new ValueStateDescriptor<String>("lastValue",Types.STRING);
+                        lastTypeState = getRuntimeContext().getState(lastType);
+                        currentTimeStamp = new ValueStateDescriptor<Long>("currentTimeStamp",Types.LONG);
+                        currentTimeStampState = getRuntimeContext().getState(currentTimeStamp);
                     }
 
                     @Override
                     // 不断地处理数据，如果得到连续两个出售，则设定告警
                     public void processElement(Tuple4<String, String, String, Integer> value, Context ctx, Collector<Tuple4<String, String, String, String>> out) throws Exception {
+                        Long current = currentTimeStampState.value();
+                        if (current == null) {
+                            current = 0L;
+                        }
                         // 获取上一个的状态（操作状态）
-                        String pervType = lastState.value();
+                        String pervType = lastTypeState.value();
                         if(pervType == null) {
                             pervType = "";
                         }
                         // 更新最新的状态（操作状态）
-                        lastState.update(value.f1);
+                        lastTypeState.update(value.f1);
                         // 关键逻辑，如果本次数据 与 上一条均为出售，则在时间服务中创建计时器
                         // 此处创建处理时间计时器。
                         if(pervType.equals("出售") && value.f1.equals("出售")){
                             // 达到条件，此处设置当前时间两秒后告警。
-                            ctx.timerService().registerProcessingTimeTimer(System.currentTimeMillis() + 10000L);
+                            long a = ctx.timerService().currentProcessingTime()+2000L;
+                            ctx.timerService().registerProcessingTimeTimer(a);
+                            // 定时存入状态
+                            currentTimeStampState.update(a);
+                        } else {
+                            // 如果连续售出后，出现购买，则删除上一个（连续出售）定时。
+                            ctx.timerService().deleteProcessingTimeTimer(current);
                         }
                         Tuple4 t4 = new Tuple4<String,String,String,String>();
                         t4.setFields(value.f0,value.f1,value.f2,"1");
