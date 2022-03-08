@@ -26,17 +26,12 @@ import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.ConnectedStreams;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
 import org.apache.flink.util.Collector;
 import source.Tuple4WithTimeProcessMoreKeySource;
-import source.Tuple4WithTimeProcessSingleKeySource;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -78,7 +73,7 @@ public class FlinkTypes4CoProcessTest {
                 }
         );
 
-        connectedStreams.process(new CoProcessFunction<Tuple4<String,String,String,Integer>,Tuple2<String,Long>,Tuple4<String,String,String,Integer>>() {
+        connectedStreams.process(new CoProcessFunction<Tuple4<String, String, String, Integer>, Tuple2<String, Long>, Tuple4<String, String, String, Integer>>() {
 
             private transient ValueStateDescriptor<Boolean> dataEnable;
             private transient ValueState<Boolean> dataEnableState;
@@ -88,23 +83,53 @@ public class FlinkTypes4CoProcessTest {
 
             @Override
             public void open(Configuration parameters) throws Exception {
-                dataEnable = new ValueStateDescriptor<Boolean>("dataEnable",Types.BOOLEAN);
+                //带默认值的已弃用
+                //                dataEnable = new ValueStateDescriptor<Boolean>("dataEnable",Types.BOOLEAN,false);
+                dataEnable = new ValueStateDescriptor<Boolean>("dataEnable", Types.BOOLEAN);
                 dataEnableState = getRuntimeContext().getState(dataEnable);
 
-                disableTimer = new ValueStateDescriptor<Long>("disableTimer",Types.LONG);
+                //带默认值的已弃用
+                //                disableTimer = new ValueStateDescriptor<Long>("disableTimer",Types.LONG,0L);
+                disableTimer = new ValueStateDescriptor<Long>("disableTimer", Types.LONG);
                 disableTimerState = getRuntimeContext().getState(disableTimer);
             }
 
             @Override
             public void processElement1(Tuple4<String, String, String, Integer> value, Context context, Collector<Tuple4<String, String, String, Integer>> collector) throws Exception {
-                
+                if (dataEnableState.value()) {
+                    collector.collect(value);
+                }
             }
 
             @Override
             public void processElement2(Tuple2<String, Long> filterValue, Context context, Collector<Tuple4<String, String, String, Integer>> collector) throws Exception {
-
+                if (dataEnableState.value() == null) {
+                    dataEnableState.update(false);
+                }
+                if (disableTimerState.value() == null) {
+                    disableTimerState.update(0L);
+                }
+                // 此分支用于控制是否开启。
+                // 首先，拿到对应的数据就开启
+                dataEnableState.update(true);
+                // 然后，设定停止时间
+                long stopTime = context.timerService().currentProcessingTime() + filterValue.f1;
+                // 获取之前存在的停止时间戳
+                long currentStopTime = disableTimerState.value();
+                if (stopTime > currentStopTime) {
+                    context.timerService().deleteProcessingTimeTimer(currentStopTime);
+                    context.timerService().registerProcessingTimeTimer(stopTime);
+                    disableTimerState.update(stopTime);
+                }
             }
-        });
+
+            @Override
+            public void onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple4<String, String, String, Integer>> out) throws Exception {
+                // 定时到达时，清楚开启状态和定时状态。
+                dataEnableState.clear();
+                disableTimerState.clear();
+            }
+        }).print();
 
 
         env.execute("Collection ");
