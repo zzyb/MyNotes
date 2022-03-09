@@ -1,4 +1,4 @@
-package run.window;/*
+package run.window.base;/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,10 +24,8 @@ import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows;
-import org.apache.flink.streaming.api.windowing.assigners.ProcessingTimeSessionWindows;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import source.Tuple4WithTimeProcessMoreKeySource;
@@ -39,7 +37,7 @@ import java.time.Duration;
 /**
  * DataSource
  */
-public class FlinkTypes4EventTimeSessionWindowsTest {
+public class FlinkTypes4SlidingEventTimeWindowTest {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
@@ -74,7 +72,7 @@ public class FlinkTypes4EventTimeSessionWindowsTest {
         });
 
         keyedStream
-                .window(EventTimeSessionWindows.withGap(Time.milliseconds(2000L)))
+                .window(SlidingEventTimeWindows.of(Time.milliseconds(5000L),Time.milliseconds(2000L)))
                 .sum(3)
                 .print();
 
