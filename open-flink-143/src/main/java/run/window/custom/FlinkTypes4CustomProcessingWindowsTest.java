@@ -42,7 +42,7 @@ import java.util.List;
 /**
  * DataSource
  */
-public class FlinkTypes4CustomWindowsTest {
+public class FlinkTypes4CustomProcessingWindowsTest {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
