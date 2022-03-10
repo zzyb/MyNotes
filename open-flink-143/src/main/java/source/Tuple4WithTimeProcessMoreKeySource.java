@@ -30,7 +30,7 @@ public class Tuple4WithTimeProcessMoreKeySource extends RichSourceFunction<Tuple
 
             Date now = new Date();
             long nowLong = now.getTime();
-            long lateLong = now.getTime() - 1000L * 11;
+            long lateLong = now.getTime() - 1000L * 10;
             String nowFormat = format.format(new Date(nowLong));
             String lateFormat = format.format(new Date(lateLong));
 

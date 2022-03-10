@@ -44,7 +44,7 @@ import java.util.Collections;
 /**
  * DataSource
  */
-public class FlinkTypes4CustomEventWindowTest {
+public class FlinkTypes4CustomEventWindowsTest {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
@@ -81,6 +81,7 @@ public class FlinkTypes4CustomEventWindowTest {
         keyedStream
                 .window(new WindowAssigner() {
                     private final long windowSize = 10 * 1000L;
+
                     @Override
                     public Collection assignWindows(Object element, long timestamp, WindowAssignerContext context) {
                         long start = timestamp - (timestamp % windowSize);
