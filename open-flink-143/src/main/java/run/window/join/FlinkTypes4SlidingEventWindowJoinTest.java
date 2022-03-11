@@ -33,6 +33,8 @@ import source.join.Tuple4WithTimeCSource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * DataSource 根据下方链接图形理解
@@ -45,9 +47,29 @@ public class FlinkTypes4SlidingEventWindowJoinTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment
                 .getExecutionEnvironment().setParallelism(1);
 
-        // 数据源为：(北京,购买,17:20:57,1) 四元组
-        DataStreamSource sourceA = env.addSource(new Tuple4WithTimeASource());
-        DataStreamSource sourceC = env.addSource(new Tuple4WithTimeCSource());
+        // 数据源为：
+        // ("郑州", "购买", "2022-01-01 00:00:00", 1) 四元组
+        DataStreamSource sourceA = env.fromCollection(
+                new ArrayList<Tuple4<String, String, String, Integer>>(
+                        Arrays.asList(
+                                // 00秒的3条数据
+                                new Tuple4<String, String, String, Integer>("上海", "购买1", "2022-01-01 00:00:00", 1),
+                                // 3s后的2条数据
+                                new Tuple4<String, String, String, Integer>("郑州", "购买1", "2022-01-01 00:00:03", 1)
+                        )
+                )
+        );
+
+        DataStreamSource sourceC = env.fromCollection(
+                new ArrayList<Tuple4<String, String, String, Integer>>(
+                        Arrays.asList(
+                                // 00秒的3条数据
+                                new Tuple4<String, String, String, Integer>("上海", "出售1", "2022-01-01 00:00:00", 1),
+                                // 3s后的2三条数据
+                                new Tuple4<String, String, String, Integer>("郑州", "出售1", "2022-01-01 00:00:03", 1)
+                        )
+                )
+        );
 
         SingleOutputStreamOperator s1 = sourceA.assignTimestampsAndWatermarks(
                 WatermarkStrategy
@@ -77,19 +99,12 @@ public class FlinkTypes4SlidingEventWindowJoinTest {
                 .join(s3)
                 .where(new Tuple4WithTimeKeyBy())
                 .equalTo(new Tuple4WithTimeKeyBy())
-                .window(SlidingEventTimeWindows.of(Time.milliseconds(5000L),Time.milliseconds(2000L)))
-                .apply(new JoinFunction<Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>>() {
+                // 窗口 00-05、02-07、04-09、06-11、08-13
+                .window(SlidingEventTimeWindows.of(Time.milliseconds(5000L), Time.milliseconds(2000L)))
+                .apply(new JoinFunction<Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>, String>() {
                     @Override
-                    public Tuple4<String, String, String, Integer> join(Tuple4<String, String, String, Integer> first, Tuple4<String, String, String, Integer> second) throws Exception {
-                        Tuple4<String, String, String, Integer> t4 = new Tuple4<>();
-                        StringBuffer typeSb = new StringBuffer();
-                        t4.setFields(
-                                first.f0,
-                                typeSb.append(first.f1).append(" ").append(second.f1).toString(),
-                                "",
-                                first.f3 + second.f3
-                        );
-                        return t4;
+                    public String join(Tuple4<String, String, String, Integer> first, Tuple4<String, String, String, Integer> second) throws Exception {
+                        return first.toString() + " ---- " + second.toString();
                     }
                 });
 

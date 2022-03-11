@@ -34,6 +34,8 @@ import source.join.Tuple4WithTimeCSource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * DataSource 根据下方链接图形理解
@@ -46,9 +48,30 @@ public class FlinkTypes4SessionEventWindowJoinTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment
                 .getExecutionEnvironment().setParallelism(1);
 
-        // 数据源为：(北京,购买,17:20:57,1) 四元组
-        DataStreamSource sourceA = env.addSource(new Tuple4WithTimeASource());
-        DataStreamSource sourceC = env.addSource(new Tuple4WithTimeCSource());
+        // 数据源为：
+        // ("郑州", "购买", "2022-01-01 00:00:00", 1) 四元组
+        DataStreamSource sourceA = env.fromCollection(
+                new ArrayList<Tuple4<String, String, String, Integer>>(
+                        Arrays.asList(
+                                // 00秒的3条数据
+                                new Tuple4<String, String, String, Integer>("郑州", "购买1", "2022-01-01 00:00:00", 1),
+                                new Tuple4<String, String, String, Integer>("上海", "购买1", "2022-01-01 00:00:00", 1),
+                                // 10s后的2条数据
+                                new Tuple4<String, String, String, Integer>("郑州", "购买2", "2022-01-01 00:00:10", 1)
+                        )
+                )
+        );
+
+        DataStreamSource sourceC = env.fromCollection(
+                new ArrayList<Tuple4<String, String, String, Integer>>(
+                        Arrays.asList(
+                                // 00秒的3条数据
+                                new Tuple4<String, String, String, Integer>("上海", "出售1", "2022-01-01 00:00:00", 1),
+                                // 10s后的2三条数据
+                                new Tuple4<String, String, String, Integer>("郑州", "出售2", "2022-01-01 00:00:10", 1)
+                        )
+                )
+        );
 
         SingleOutputStreamOperator s1 = sourceA.assignTimestampsAndWatermarks(
                 WatermarkStrategy
