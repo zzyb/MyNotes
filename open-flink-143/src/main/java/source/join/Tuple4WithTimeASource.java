@@ -32,8 +32,8 @@ public class Tuple4WithTimeASource extends RichSourceFunction<Tuple4<String, Str
                     1
             );
             sourceContext.collect(value);
-            System.out.println("A == " + value);
-            Thread.sleep(1000L);
+//            System.out.println("A == " + value);
+            Thread.sleep(5000L);
         }
     }
 

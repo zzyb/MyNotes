@@ -37,7 +37,8 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 
 /**
- * DataSource
+ * DataSource 根据下方链接图形理解
+ * 详细见：https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/dev/datastream/operators/joining/
  */
 public class FlinkTypes4TumblingEventWindowJoinTest {
     public static void main(String[] args) throws Exception {
@@ -79,18 +80,11 @@ public class FlinkTypes4TumblingEventWindowJoinTest {
                 .where(new Tuple4WithTimeKeyBy())
                 .equalTo(new Tuple4WithTimeKeyBy())
                 .window(TumblingEventTimeWindows.of(Time.milliseconds(5000L)))
-                .apply(new JoinFunction<Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>>() {
+                .apply(new JoinFunction<Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>, String>() {
                     @Override
-                    public Tuple4<String, String, String, Integer> join(Tuple4<String, String, String, Integer> first, Tuple4<String, String, String, Integer> second) throws Exception {
-                        Tuple4<String, String, String, Integer> t4 = new Tuple4<>();
+                    public String join(Tuple4<String, String, String, Integer> first, Tuple4<String, String, String, Integer> second) throws Exception {
                         StringBuffer typeSb = new StringBuffer();
-                        t4.setFields(
-                                first.f0,
-                                typeSb.append(first.f1).append(" ").append(second.f1).toString(),
-                                "",
-                                first.f3 + second.f3
-                        );
-                        return t4;
+                        return typeSb.append(first.toString()).append(" --> ").append(second.toString()).toString();
                     }
                 });
 

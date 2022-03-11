@@ -35,7 +35,8 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 
 /**
- * DataSource
+ * DataSource 根据下方链接图形理解
+ * 详细见：https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/dev/datastream/operators/joining/
  */
 public class FlinkTypes4SlidingEventWindowJoinTest {
     public static void main(String[] args) throws Exception {
