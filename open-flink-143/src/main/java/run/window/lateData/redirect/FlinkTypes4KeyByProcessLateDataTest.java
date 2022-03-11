@@ -1,4 +1,4 @@
-package run.window.lateData;/*
+package run.window.lateData.redirect;/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,9 +21,13 @@ import org.apache.flink.api.common.eventtime.TimestampAssignerSupplier;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple4;
-import org.apache.flink.streaming.api.datastream.*;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -35,12 +39,12 @@ import source.Tuple4WithTimeProcessMoreKeySource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Iterator;
 
 /**
  * DataSource
  */
-public class FlinkTypes4TumblingEventTimeWindowProcessLateDataTest {
+public class FlinkTypes4KeyByProcessLateDataTest {
     public static void main(String[] args) throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
@@ -77,31 +81,29 @@ public class FlinkTypes4TumblingEventTimeWindowProcessLateDataTest {
         OutputTag<Tuple4<String, String, String, Integer>> lateDataOutput = new OutputTag<Tuple4<String, String, String, Integer>>("lateData") {
         };
 
-        WindowedStream window = keyedStream.window(TumblingEventTimeWindows.of(Time.milliseconds(5000L)));
-
-        SingleOutputStreamOperator process = window
-                .sideOutputLateData(lateDataOutput) // 获取迟到数据!!! (不需要根据水位线比较)
-                // 处理函数中，进行逻辑计算
-                .process(new ProcessWindowFunction<Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>, String, TimeWindow>() {
+        SingleOutputStreamOperator process = keyedStream.process(
+                new KeyedProcessFunction<String, Tuple4<String, String, String, Integer>, Tuple4<String, String, String, Integer>>() {
                     @Override
-                    public void process(String key, Context context, Iterable<Tuple4<String, String, String, Integer>> elements, Collector<Tuple4<String, String, String, Integer>> out) throws Exception {
-                        Tuple4<String, String, String, Integer> t4 = new Tuple4<>();
-                        AtomicInteger sum = new AtomicInteger();
-                        elements.forEach(
-                                element -> {
-                                    sum.getAndAdd(1);
-                                }
-                        );
-                        t4.setFields(key, "", "", sum.get());
-                        out.collect(t4);
+                    public void processElement(Tuple4<String, String, String, Integer> value, Context ctx, Collector<Tuple4<String, String, String, Integer>> out) throws Exception {
+                        // 获取当前水位线 和 元素时间。
+                        long currentWatermark = ctx.timerService().currentWatermark();
+                        long time = format.parse(value.f2).getTime();
+                        // 如果时间小于水位线，则标记并放到副输出。
+                        if (time < currentWatermark) {
+                            value.setField("late - " + value.f1, 1);
+                            ctx.output(lateDataOutput, value);
+                        } else {
+                            out.collect(value);
+                        }
                     }
-                });
+                }
+        );
 
-        // 从处理函数获取迟到数据的输出
-        DataStream sideOutput = process.getSideOutput(lateDataOutput);
+        DataStream lateStream = process.getSideOutput(lateDataOutput);
 
         process.print();
-        sideOutput.print();
+        lateStream.print();
+
 
         env.execute("Collection ");
     }
