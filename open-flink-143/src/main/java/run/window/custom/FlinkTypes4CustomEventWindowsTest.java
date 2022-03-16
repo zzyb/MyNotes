@@ -46,7 +46,7 @@ import java.util.Collections;
  */
 public class FlinkTypes4CustomEventWindowsTest {
     public static void main(String[] args) throws Exception {
-        SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment
                 .getExecutionEnvironment().setParallelism(1);

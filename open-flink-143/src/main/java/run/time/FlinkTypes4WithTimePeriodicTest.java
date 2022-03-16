@@ -37,7 +37,7 @@ import java.time.Duration;
  */
 public class FlinkTypes4WithTimePeriodicTest {
 	public static void main(String[] args) throws Exception {
-		SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS");
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
 		StreamExecutionEnvironment env = StreamExecutionEnvironment
 				.getExecutionEnvironment().setParallelism(1);

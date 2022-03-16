@@ -12,7 +12,7 @@ public class BoundedOutOfOrdernessGenerator implements WatermarkGenerator<Tuple4
 
     private final long ex = 6000L;
     private long maxTimestamp ;
-    SimpleDateFormat format = new SimpleDateFormat("YYYY-HH-MM HH:mm:ss.SSS");
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     @Override
     public void onEvent(Tuple4<String, String, String, Integer> event, long eventTimestamp, WatermarkOutput output) {

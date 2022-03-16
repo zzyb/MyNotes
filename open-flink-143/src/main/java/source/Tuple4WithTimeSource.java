@@ -12,7 +12,7 @@ import java.util.Random;
 public class Tuple4WithTimeSource extends RichSourceFunction<Tuple4<String, String, String,Integer>> {
     Random random = null;
     Tuple4 value = null;
-    SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS");
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     String [] city = {"北京","上海"};
 //    String [] city = {"北京","上海","郑州"};
     String [] type = {"购买"};

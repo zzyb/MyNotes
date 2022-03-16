@@ -22,6 +22,6 @@ public class UseServerTimeGenerator implements WatermarkGenerator<Tuple4<String,
         long late6s = System.currentTimeMillis() - ex;
         output.emitWatermark(new Watermark(late6s));
 //        //当周期性的调用此方法时，发出 当前机器 时间戳-6s 作为水位线。 // 最后减一表示发出这个时间之前一点的。
-        System.out.println(new SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(late6s));
+        System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(late6s));
     }
 }
