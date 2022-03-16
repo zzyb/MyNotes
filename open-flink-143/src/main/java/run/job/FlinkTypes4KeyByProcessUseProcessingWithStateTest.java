@@ -61,12 +61,12 @@ public class FlinkTypes4KeyByProcessUseProcessingWithStateTest {
                                 new Tuple4<String, String, String, Integer>("郑州", "售出", "2022-01-01 00:00:09", 6),
                                 new Tuple4<String, String, String, Integer>("上海", "售出", "2022-01-01 00:00:09", 7),
                                 // 10s后的5条数据
-                                new Tuple4<String, String, String, Integer>("郑州", "售出", "2022-01-01 00:00:20", 4),
-                                new Tuple4<String, String, String, Integer>("郑州", "售出", "2022-01-01 00:00:20", 4),
-                                new Tuple4<String, String, String, Integer>("郑州", "购买", "2022-01-01 00:00:20", 4),
-                                new Tuple4<String, String, String, Integer>("郑州", "购买", "2022-01-01 00:00:20", 4),
-                                new Tuple4<String, String, String, Integer>("南京", "购买", "2022-01-01 00:00:20", 4),
-                                new Tuple4<String, String, String, Integer>("上海", "购买", "2022-01-01 00:00:20", 4)
+                                new Tuple4<String, String, String, Integer>("郑州", "售出", "2022-01-01 00:01:20", 4),
+                                new Tuple4<String, String, String, Integer>("郑州", "售出", "2022-01-01 00:01:20", 4),
+                                new Tuple4<String, String, String, Integer>("郑州", "购买", "2022-01-01 00:01:20", 4),
+                                new Tuple4<String, String, String, Integer>("郑州", "购买", "2022-01-01 00:01:20", 4),
+                                new Tuple4<String, String, String, Integer>("南京", "购买", "2022-01-01 00:01:20", 4),
+                                new Tuple4<String, String, String, Integer>("上海", "购买", "2022-01-01 00:01:20", 4)
                         )
                 )
         );
@@ -118,7 +118,7 @@ public class FlinkTypes4KeyByProcessUseProcessingWithStateTest {
                         }
 
                         // 设置清理状态计时器时间为记录时间戳晚10秒
-                        long newTimer = ctx.timestamp() + 1000L * 10;
+                        long newTimer = ctx.timestamp() + 1000L * 60;
                         if (lastTimeState.value() == null) {
                             lastTimeState.update(0L);
                         }
@@ -143,6 +143,8 @@ public class FlinkTypes4KeyByProcessUseProcessingWithStateTest {
                     @Override
                     // 计时器完成时调用
                     public void onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple4<String, String, String, String>> out) throws Exception {
+                        // 为了展示出状态被清除
+                        System.out.println(ctx.getCurrentKey() + "clear State！！！");
                         // 清除所有状态
                         lastTimeState.clear();
                         lastValueState.clear();
