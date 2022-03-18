@@ -1,5 +1,8 @@
-package run.connector.custom;
+package source.custom;
 
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
@@ -21,6 +24,9 @@ public class StringWithTimeCheckPointedCustomSource extends RichSourceFunction<S
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     String[] city = {"北京", "上海", "郑州", "广州", "香港", "唐山", "天津", "新郑"};
 
+    private Long count = 1L;
+    private ListState<Long> state;
+
 
     @Override
     public void open(Configuration parameters) throws Exception {
@@ -35,20 +41,23 @@ public class StringWithTimeCheckPointedCustomSource extends RichSourceFunction<S
     // 运行在单独的线程中
     // 运行在单独的线程中
     public void run(SourceContext sourceContext) throws Exception {
-        long count = 1L;
         while (isRunning && count < 101) {
-            count++;
-            StringBuffer sb = new StringBuffer();
+            // 输出和状态更新是原子的,检查点的时候锁住输出.
+            Object checkpointLock = sourceContext.getCheckpointLock();
+            synchronized (checkpointLock) {
+                Date now = new Date();
+                long nowLong = now.getTime();
+                String nowFormat = format.format(new Date(nowLong));
+                String cityValue = city[random.nextInt(city.length)];
 
-            Date now = new Date();
-            long nowLong = now.getTime();
-            String nowFormat = format.format(new Date(nowLong));
-            String cityValue = city[random.nextInt(city.length)];
-            String result = sb.append(count).append(",").append(cityValue).append(",").append(nowFormat).append(",").append(nowLong).toString();
+                StringBuffer sb = new StringBuffer();
+                String result = sb.append(count).append(",").append(cityValue).append(",").append(nowFormat).append(",").append(nowLong).toString();
 
-            sourceContext.collect(result);
+                sourceContext.collect(result);
 
-            Thread.sleep(1000);
+                count++;
+                Thread.sleep(1000);
+            }
         }
     }
 
@@ -61,12 +70,25 @@ public class StringWithTimeCheckPointedCustomSource extends RichSourceFunction<S
     }
 
     @Override
+    // 生成检查点的时候调用
     public void snapshotState(FunctionSnapshotContext context) throws Exception {
-
+        // 先清理状态
+        state.clear();
+        // 然后存储当前状态要记录的值
+        state.add(count);
     }
 
     @Override
+    // 初始化 或者 错误恢复时调用
     public void initializeState(FunctionInitializationContext context) throws Exception {
-
+        // 获取状态存储值
+        state = context.getOperatorStateStore().getListState(new ListStateDescriptor<Long>("state", Types.LONG));
+        // 将状态值恢复到程序中
+        Iterable<Long> longs = state.get();
+        if (null == longs || !longs.iterator().hasNext()) {
+            count = 1L;
+        } else {
+            count = longs.iterator().next();
+        }
     }
 }
