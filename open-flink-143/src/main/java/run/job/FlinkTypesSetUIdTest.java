@@ -19,7 +19,7 @@ package run.job;/*
 import operator.single.Num2StringTypesMapFunction;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.GenerateRecordSource;
+import connector.source.GenerateRecordSource;
 
 /**
  * DataSource

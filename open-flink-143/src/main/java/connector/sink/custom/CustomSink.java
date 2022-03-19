@@ -1,4 +1,4 @@
-package sink.custom;
+package connector.sink.custom;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;

@@ -16,15 +16,13 @@ package run.base;/*
  * limitations under the License.
  */
 
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.ConnectedStreams;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoMapFunction;
-import source.GenerateRecordSource;
-import source.GenerateThreeDigitRecordSource;
+import connector.source.GenerateRecordSource;
+import connector.source.GenerateThreeDigitRecordSource;
 
 /**
  * DataSource

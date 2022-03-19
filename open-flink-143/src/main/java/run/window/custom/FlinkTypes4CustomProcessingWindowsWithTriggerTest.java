@@ -35,8 +35,7 @@ import org.apache.flink.streaming.api.windowing.triggers.ProcessingTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.api.windowing.windows.Window;
-import source.Tuple4WithTimeProcessMoreKeySource;
+import connector.source.Tuple4WithTimeProcessMoreKeySource;
 
 import java.text.SimpleDateFormat;
 import java.util.Collection;

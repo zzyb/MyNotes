@@ -1,13 +1,8 @@
 package run.connector.custom.sink;
 
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.runtime.state.storage.FileSystemCheckpointStorage;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.runtime.operators.CheckpointCommitter;
-import sink.custom.CustomIdempotentSink;
-import sink.custom.CustomWriteAheadLogSink;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +22,7 @@ public class CustomSinkByTransactionWAL {
         )));
 
         // 将数据发送到自定义数据输出
-//        source.transform(new CustomWriteAheadLogSink());
+//        connector.source.transform(new CustomWriteAheadLogSink());
 
         env.execute("幂等性 Idempotent Sink ");
     }

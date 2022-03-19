@@ -17,12 +17,11 @@ package run.base;/*
  */
 
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.Tuple3IntSource;
+import connector.source.Tuple3IntSource;
 
 /**
  * DataSource

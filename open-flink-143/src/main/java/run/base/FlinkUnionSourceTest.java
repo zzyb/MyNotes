@@ -19,8 +19,8 @@ package run.base;/*
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.GenerateRecordSource;
-import source.GenerateThreeDigitRecordSource;
+import connector.source.GenerateRecordSource;
+import connector.source.GenerateThreeDigitRecordSource;
 
 /**
  * DataSource

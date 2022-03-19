@@ -26,7 +26,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
-import source.Tuple4WithTimeProcessSingleKeySource;
+import connector.source.Tuple4WithTimeProcessSingleKeySource;
 
 import java.text.SimpleDateFormat;
 

@@ -31,13 +31,11 @@ import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner;
 import org.apache.flink.streaming.api.windowing.triggers.ProcessingTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import source.Tuple4WithTimeProcessMoreKeySource;
+import connector.source.Tuple4WithTimeProcessMoreKeySource;
 
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * DataSource

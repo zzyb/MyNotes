@@ -1,4 +1,4 @@
-package sink.custom;
+package connector.sink.custom;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.java.tuple.Tuple2;

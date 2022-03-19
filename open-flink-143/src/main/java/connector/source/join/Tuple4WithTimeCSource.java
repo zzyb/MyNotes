@@ -1,4 +1,4 @@
-package source.join;
+package connector.source.join;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;

@@ -24,7 +24,7 @@ import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import source.Tuple4WithTimeProcessMoreKeySource;
+import connector.source.Tuple4WithTimeProcessMoreKeySource;
 
 import java.text.SimpleDateFormat;
 

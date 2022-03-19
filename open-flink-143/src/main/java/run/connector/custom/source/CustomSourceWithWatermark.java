@@ -2,8 +2,7 @@ package run.connector.custom.source;
 
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.custom.StringWithTimeAndWatermark;
-import source.custom.StringWithTimeCheckPointedCustomSource;
+import connector.source.custom.StringWithTimeAndWatermark;
 
 import java.text.SimpleDateFormat;
 

@@ -23,8 +23,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoFlatMapFunction;
 import org.apache.flink.util.Collector;
-import source.MultiRecordSource;
-import source.MultiThreeDigitRecordSource;
+import connector.source.MultiRecordSource;
+import connector.source.MultiThreeDigitRecordSource;
 
 /**
  * DataSource

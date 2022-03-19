@@ -3,7 +3,7 @@ package run.connector.custom.sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import sink.custom.CustomIdempotentSink;
+import connector.sink.custom.CustomIdempotentSink;
 
 import java.util.ArrayList;
 import java.util.Arrays;

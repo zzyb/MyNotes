@@ -17,12 +17,11 @@ package run.base;/*
  */
 
 import operator.single.Num2StringMapFunction;
-import operator.single.Num2StringTypesMapFunction;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.GenerateRecordSource;
+import connector.source.GenerateRecordSource;
 
 /**
  * DataSource

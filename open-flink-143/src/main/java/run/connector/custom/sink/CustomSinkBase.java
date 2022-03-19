@@ -2,8 +2,8 @@ package run.connector.custom.sink;
 
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import sink.custom.CustomSink;
-import source.StringWithTimeSource;
+import connector.sink.custom.CustomSink;
+import connector.source.StringWithTimeSource;
 
 import java.text.SimpleDateFormat;
 

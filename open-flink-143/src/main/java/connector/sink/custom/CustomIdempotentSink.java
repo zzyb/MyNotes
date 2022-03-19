@@ -1,4 +1,4 @@
-package sink.custom;
+package connector.sink.custom;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;

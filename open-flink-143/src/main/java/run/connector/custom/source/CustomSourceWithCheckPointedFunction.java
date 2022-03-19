@@ -1,12 +1,8 @@
 package run.connector.custom.source;
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.connector.kafka.source.KafkaSource;
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.custom.StringWithTimeCheckPointedCustomSource;
+import connector.source.custom.StringWithTimeCheckPointedCustomSource;
 
 import java.text.SimpleDateFormat;
 

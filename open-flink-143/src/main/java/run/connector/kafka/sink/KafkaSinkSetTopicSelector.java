@@ -7,11 +7,7 @@ import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.sink.TopicSelector;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema;
-import org.apache.flink.streaming.connectors.kafka.partitioner.FlinkKafkaPartitioner;
-import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import source.StringWithTimeSource;
+import connector.source.StringWithTimeSource;
 
 public class KafkaSinkSetTopicSelector {
     public static void main(String[] args) throws Exception {

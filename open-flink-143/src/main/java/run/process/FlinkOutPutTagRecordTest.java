@@ -16,7 +16,6 @@ package run.process;/*
  * limitations under the License.
  */
 
-import operator.single.CopyByNumFlatMapFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -24,7 +23,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
-import source.GenerateRecordSource;
+import connector.source.GenerateRecordSource;
 
 /**
  * DataSource

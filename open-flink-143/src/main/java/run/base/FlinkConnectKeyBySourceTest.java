@@ -16,7 +16,6 @@ package run.base;/*
  * limitations under the License.
  */
 
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.ConnectedStreams;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -24,8 +23,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoFlatMapFunction;
 import org.apache.flink.util.Collector;
-import source.MultiRecordSource;
-import source.MultiThreeDigitRecordSource;
+import connector.source.MultiRecordSource;
+import connector.source.MultiThreeDigitRecordSource;
 
 /**
  * DataSource

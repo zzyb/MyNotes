@@ -18,7 +18,7 @@ package run.base;/*
 
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.MultiRecordSource;
+import connector.source.MultiRecordSource;
 
 /**
  * DataSource

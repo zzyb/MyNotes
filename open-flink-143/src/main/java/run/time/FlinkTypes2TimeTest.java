@@ -16,13 +16,10 @@ package run.time;/*
  * limitations under the License.
  */
 
-import operator.single.Num2StringMapFunction;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.GenerateRecordSource;
+import connector.source.GenerateRecordSource;
 
 /**
  * DataSource

@@ -17,14 +17,10 @@ package run.base;/*
  */
 
 import operator.single.CopyByNumFlatMapFunction;
-import operator.single.EvenNumFilterFunction;
-import operator.single.Num2StringMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import source.GenerateRecordSource;
+import connector.source.GenerateRecordSource;
 
 /**
  * DataSource

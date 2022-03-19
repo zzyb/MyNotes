@@ -16,17 +16,11 @@ package run.time;/*
  * limitations under the License.
  */
 
-import org.apache.flink.api.common.eventtime.WatermarkGenerator;
-import org.apache.flink.api.common.eventtime.WatermarkGeneratorSupplier;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.runtime.operators.util.AssignerWithPeriodicWatermarksAdapter;
-import source.GenerateRecordSource;
-import source.MultiRecordSource;
-import source.MultiThreeDigitRecordSource;
+import connector.source.MultiRecordSource;
 
 import java.time.Duration;
 
