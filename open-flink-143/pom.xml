@@ -118,7 +118,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>spendreport.run.base.FlinkSingleRecordTest</mainClass>
+                                    <mainClass>spendreport.example.run.base.FlinkSingleRecordTest</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
