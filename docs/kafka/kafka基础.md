@@ -61,7 +61,7 @@ Kafka由一组称为Broker的机器网络组成。
 
 生产者将决定消息发往哪个分区。
 
-<img src="./kafka设计.resource/kafka-Producer.png" alt="image-20220326151005643" style="zoom:20%;" />
+<img src="./kafka基础.resource/kafka-Producer.png" alt="image-20220326151005643" style="zoom:20%;" />
 
 要关心的东西很多：
 
