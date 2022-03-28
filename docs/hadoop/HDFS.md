@@ -64,21 +64,29 @@ HDFS 遵循主/从架构，由单个 NameNode(NN) 和多个 DataNode(DN) 组成�
 - 不适合存储大量小文件
 - 只支持单个写入者，且文件只能添加数据不能修改
 
-## HDFS基本概念
+## 三、HDFS基本概念
 
 
 
-## HDFS命令行接口
+## 四、HDFS命令行接口
 
 
 
-## Java接口
+## 五、Java接口
 
 
 
-## 数据流
+## 六、数据流
 
-### 剖析文件读取
+### 6.1.1 文件读取插画
+
+![](./HDFS.resource/hdfs读1.png)
+
+![](./HDFS.resource/hdfs读2.png)
+
+![](./HDFS.resource/hdfs读3.png)
+
+### 6.1.2 剖析文件读取
 
 ![](./HDFS.resource/剖析文件读取.png)
 
@@ -113,7 +121,15 @@ HDFS 遵循主/从架构，由单个 NameNode(NN) 和多个 DataNode(DN) 组成�
 
 
 
-### 剖析文件写入
+### 6.2.1 文件写入插画
+
+![](./HDFS.resource/hdfs写1.png)
+
+![](./HDFS.resource/hdfs写2.png)
+
+![](./HDFS.resource/hdfs写3.png)
+
+### 6.2.2 剖析文件写入
 
 ![](./HDFS.resource/剖析文件写入.png)
 
@@ -143,9 +159,9 @@ HDFS 遵循主/从架构，由单个 NameNode(NN) 和多个 DataNode(DN) 组成�
      - 步骤 7 ：并联系到namenode告知其完成文件写入前，等待确认。
 9. namenode已经知道文件由哪些块组成（DataStreamer请求分配数据块），所以它在返回成功前只需要等待数据块进行最小量的复制。
 
+### 
 
-
-### 复本怎么放
+### 6.3 复本怎么放
 
 Hadoop默认策略：
 
@@ -154,5 +170,5 @@ Hadoop默认策略：
 - 第3个复本放在第2个复本同一个机架上，且随机选择另一个节点。
 - 其他复本放在集群中随机选择节点上。（系统会尽量避免同一机架上过多复本。）
 
-## 通过distcp并行复制
+## 七、通过distcp并行复制
 
