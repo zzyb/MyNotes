@@ -164,7 +164,7 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 
 <u>如果线程被阻塞，就无法检查中断状态。</u>
 
-- `InterruptedException异常`：当一个被sleep或wait调用阻塞的线程上调用interrupt方法时，那个阻塞调用（sleep或wait）将被一个InterruptedException异常中断。
+- `InterruptedException异常`：当一个**被sleep或wait调用阻塞的线程上调用interrupt方法时，那个阻塞调用（sleep或wait）将被一个InterruptedException异常中断**。
   - 有一些阻塞I/O不能被中断，对此应该考虑选择可中断的调用。
 
 ```java
@@ -283,9 +283,9 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 
 
 
-尽可能的避免在底层代码抑制InterruptException异常。有两个推荐的方式：
+尽可能的**避免在底层代码抑制InterruptException异常**。有两个推荐的方式：
 
-1. 捕获异常，并在catch中设置它的中断状态。
+1. <u>捕获异常，并在catch中设置它的中断状态</u>。
 
    ```java
        public static void b(){
@@ -301,7 +301,7 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
        }
    ```
 
-2. 抛出异常，给调用者捕获。（throws InterruptException）
+2. <u>抛出异常，给调用者捕获</u>。（throws InterruptException）
 
    ```java
        public static void c() throws InterruptedException {
