@@ -10,18 +10,18 @@ import org.apache.spark.api.java.function.VoidFunction;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class SparkContextLocalDemo {
+public class SparkContextLocalByCollectionDemo {
     public static void main(String[] args) {
 
         SparkConf sparkConf = new SparkConf()
-                .setMaster("local[1]") // 注意，不是webUI的地址。
+                .setMaster("local[1]") // 注意:
                 .setAppName("firstSpark");
 
         SparkContext sparkContext = new SparkContext(sparkConf);
 
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
 
-        ArrayList<String> strings = new ArrayList<>(Arrays.asList(
+        ArrayList<String> lines = new ArrayList<>(Arrays.asList(
                 "spark jjj",
                 "spark jjj",
                 "spark jjj",
@@ -30,7 +30,7 @@ public class SparkContextLocalDemo {
                 "flink"
         ));
 
-        JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(strings);
+        JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
 
         stringJavaRDD.map(new Function<String, Integer>() {
             @Override
