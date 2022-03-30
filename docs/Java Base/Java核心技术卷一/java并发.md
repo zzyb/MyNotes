@@ -364,6 +364,172 @@ while(!Thread.currentThread().isInterrupted() && more work to do){
 
 ### 未捕获异常处理器
 
+ * 1、线程run方法**不能抛出**<u>检查型异常</u>；
+ * 2、<u>非检查型异常（Error/RunTimeException）会导致线程终止</u>。
+
+```java
+/**
+ * 1、线程run方法不能抛出检查型异常；
+ * 2、非检查型异常（Error/RunTimeException）会导致线程终止。
+ *
+ * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+ * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+ * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+ */
+```
+
+
+
+一个例子：（run方法内会抛出非检查异常！！！）
+
+```java
+public class UnCaughtExceptionDemo {
+  public static void main(String[] args) {
+    //
+    Runnable r =
+        () -> {
+          // 注意：不是在run方法内try-catch
+          //          try {
+          System.out.println(4 / 2);
+          System.out.println(4 / 0); // 会抛RuntimeException异常
+          System.out.println(4 / 3);
+          //          } catch (Exception e) {
+          //            System.out.println("Catch Exception !!!");
+          //          }
+        };
+
+    try {
+      Thread thread = new Thread(r);
+      thread.start();
+        /**
+         * 1、线程run方法不能抛出检查型异常；
+         * 2、非检查型异常（Error/RunTimeException）会导致线程终止。
+         *
+         * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+         * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+         * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+         */
+        // 主线程捕获不到多线程中抛出的异常（非检查型异常）
+        // 主线程捕获不到多线程中抛出的异常（非检查型异常）
+        // 主线程捕获不到多线程中抛出的异常（非检查型异常）,这段代码会报错，catch中的代码不会执行。
+    } catch (Exception e) {
+      System.out.println("-----Exception-----");
+    }
+  }
+}
+```
+
+```java
+// 输出
+2
+Exception in thread "Thread-0" java.lang.ArithmeticException: / by zero
+	at com.yber.java.thread.uncaught.UnCaughtExceptionDemo.lambda$main$0(UnCaughtExceptionDemo.java:11)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+
+```
+
+#### 方法1 :setUncaughtExceptionHandler
+
+`thread.setUncaughtExceptionHandler(new ExceptionHandler2());`
+
+```java
+public class UnCaughtExceptionWithSetHandler {
+  public static void main(String[] args) {
+
+    ThreadWithEx2 r = new ThreadWithEx2();
+    try {
+      Thread thread = new Thread(r);
+
+      // 在线程启动前设置！！！
+      thread.setUncaughtExceptionHandler(new ExceptionHandler2());
+
+      thread.start();
+      /**
+       * 1、线程run方法不能抛出检查型异常；
+       * 2、非检查型异常（Error/RunTimeException）会导致线程终止。
+       *
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       */
+    } catch (Exception e) {
+      System.out.println("-----Exception-----");
+    }
+  }
+}
+
+class ThreadWithEx implements Runnable {
+  @Override
+  public void run() {
+    System.out.println(4 / 2);
+    System.out.println(4 / 0); // 会抛RuntimeException异常
+    System.out.println(4 / 3);
+  }
+}
+
+class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+
+  @Override
+  public void uncaughtException(Thread t, Throwable e) {
+    System.out.println("get it : " + e.getMessage());
+  }
+}
+```
+
+#### 方法2 :setDefaultUncaughtExceptionHandler
+
+`Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler2());`
+
+```java
+public class UnCaughtExceptionWithSetHandler2 {
+  public static void main(String[] args) {
+
+    ThreadWithEx2 r = new ThreadWithEx2();
+    try {
+      Thread thread = new Thread(r);
+
+      // 在线程启动前设置！！！
+      Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler2());
+
+      thread.start();
+      /**
+       * 1、线程run方法不能抛出检查型异常；
+       * 2、非检查型异常（Error/RunTimeException）会导致线程终止。
+       *
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       * 非检查型异常，会在线程死亡前，传递到一个用于处理未捕获异常的处理器！
+       */
+    } catch (Exception e) {
+      System.out.println("-----Exception-----");
+    }
+  }
+}
+
+class ThreadWithEx2 implements Runnable {
+  @Override
+  public void run() {
+    System.out.println(4 / 2);
+    System.out.println(4 / 0); // 会抛RuntimeException异常
+    System.out.println(4 / 3);
+  }
+}
+
+class ExceptionHandler2 implements Thread.UncaughtExceptionHandler {
+
+  @Override
+  public void uncaughtException(Thread t, Throwable e) {
+    System.out.println("get it : " + e.getMessage());
+  }
+}
+```
+
+```java
+// 输出 ：方法1、2
+2
+get it : / by zero
+```
+
 
 
 ### 线程优先级
