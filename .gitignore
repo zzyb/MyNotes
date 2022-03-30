@@ -5,3 +5,4 @@ java-core/src/main/resources/log4j2.properties
 *.iml
 open-flink-143/.idea/
 open-spark-321/.idea/
+open-spark-321/target/

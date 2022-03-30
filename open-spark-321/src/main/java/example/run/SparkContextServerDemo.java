@@ -7,15 +7,32 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 
-public class SparkContextDemo {
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class SparkContextServerDemo {
     public static void main(String[] args) {
 
-        SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("firstSpark");
+        SparkConf sparkConf = new SparkConf()
+                .setMaster("spark://k8s-node09:7077") // 注意，不是webUI的地址。
+                .setAppName("firstSpark")
+                // 提交到远程Spark运行：远程运行是通过运行jar的形式，可以先使用mvn打包，然后设置对应的jar。
+                .setJars(new String[]{"D:\\zyb\\MyNotes\\open-spark-321\\target\\open-spark-321-1.0.jar"});
+
         SparkContext sparkContext = new SparkContext(sparkConf);
 
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
 
-        JavaRDD<String> stringJavaRDD = javaSparkContext.textFile("C:\\Users\\Lenovo\\Desktop\\spark.txt");
+        ArrayList<String> strings = new ArrayList<>(Arrays.asList(
+                "spark jjj",
+                "spark jjj",
+                "spark jjj",
+                "spark jjj",
+                "flink jjj",
+                "flink"
+        ));
+
+        JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(strings);
 
         stringJavaRDD.map(new Function<String, Integer>() {
             @Override
