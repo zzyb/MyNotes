@@ -1,16 +1,16 @@
-package example.run;
+package example.run.actions;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.VoidFunction;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-public class SparkContextLocalByExternalSystemDemo {
+public class SparkTakeByCollectionDemo {
     public static void main(String[] args) {
 
         SparkConf sparkConf = new SparkConf()
@@ -21,19 +21,22 @@ public class SparkContextLocalByExternalSystemDemo {
 
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
 
-        JavaRDD<String> stringJavaRDD = javaSparkContext.textFile("C:\\Users\\Lenovo\\Desktop\\spark.txt");
+        ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+                "spark jjj",
+                "spark jjj",
+                "spark jjj",
+                "spark jjj",
+                "flink jjj",
+                "flink"
+        ));
 
-        stringJavaRDD.map(new Function<String, Integer>() {
-            @Override
-            public Integer call(String s) throws Exception {
-                return s.length();
-            }
-        }).foreach(new VoidFunction<Integer>() {
-            @Override
-            public void call(Integer integer) throws Exception {
-                System.out.println(integer);
-            }
-        });
+        JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+
+        // 获取第一个元素，并输出
+        List<String> values = stringJavaRDD.take(1);
+        for (String value : values) {
+            System.out.println(value);
+        }
 
         javaSparkContext.stop();
 

@@ -85,7 +85,7 @@ distFile: org.apache.spark.rdd.RDD[String] = /root/hosts MapPartitionsRDD[2] at 
 
 ### 2.4 RDD创建
 
-#### 读取外部数据集
+#### 2.4.1 读取外部数据集
 
 ##### textFile()
 
@@ -101,7 +101,9 @@ JavaRDD<String> stringJavaRDD = javaSparkContext.textFile("C:\\Users\\Lenovo\\De
 
 
 
-#### 对现有数据集并行化
+#### 2.4.2 对现有数据集并行化
+
+**常用于开发原型和测试**，这种方式<u>需要提前把整个数据集放在一台机器的内存中</u>。
 
 ##### parallelize()
 
@@ -131,8 +133,339 @@ JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
 - 转换操作：`返回一个新的RDD`，例如：map、filter。
 - 行动操作：`向驱动器程序返回结果或把结果写入外部系统，会触发实际计算`，例如：count、first。
 
-#### 2.5.1 转换操作
+#### 2.5.1 转化操作
+
+1. 转化操作是返回新的RDD的操作。
+2. 转化操作是惰性操作，只有在行动操作中用到了这些RDD才会被计算。
+
+##### map
+
+接收一个函数，把函数用于RDD中的每个元素，将函数的返回结果作为结果RDD中对应元素的值。
+
+```java
+// map操作：接收的字符串数据转换为长度
+JavaRDD<Integer> mapRDD = stringJavaRDD.map(new Function<String, Integer>() {
+    @Override
+    public Integer call(String s) throws Exception {
+        return s.length();
+    }
+});
+```
+
+
+
+##### filter
+
+接收一个函数，并将满足该函数的元素放入新的RDD中返回。
+
+```java
+// filter操作：接收字符串数据，如果包含flink则返回。
+JavaRDD<String> filterRDD = stringJavaRDD.filter(new Function<String, Boolean>() {
+    @Override
+    public Boolean call(String s) throws Exception {
+        return s.contains("flink");
+    }
+});
+```
+
+
+
+##### flatmap
+
+接收一个函数，应用到输入RDD的每个元素上；返回的不是一个元素，而是一个返回值序列迭代器。**最终输出是**一个<u>包含各个迭代器的所有元素的RDD</u>。
+
+```java
+// flatMap操作：接收字符串数据，根据分隔符返回成单个单词数据。
+JavaRDD<String> flatMapRDD = stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
+    @Override
+    public Iterator<String> call(String s) throws Exception {
+        String[] words = s.split(" ");
+        Iterator<String> iterator = Arrays.stream(words).iterator();
+        return iterator;
+    }
+});
+```
+
+
+
+##### distinct
+
+生成一个只包含不同元素的新RDD。
+
+<u>distinct开销很大，需要将所有数据通过网络进行混洗（shuffle）</u>，确保每个元素都只有一份。
+
+// to-do ： `数据混洗与如何避免数据混洗`
+
+```java
+ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+    "spark",
+    "spark",
+    "hadoop",
+    "hadoop",
+    "flink",
+    "flink"
+));
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+
+// 去重
+JavaRDD<String> distinct = stringJavaRDD.distinct();
+
+// 测试输出
+distinct.foreach(new VoidFunction<String>() {
+    @Override
+    public void call(String s) throws Exception {
+        System.out.println(s);
+    }
+});
+// 输出：
+//spark
+//hadoop
+//flink
+```
+
+
+
+##### union(other)
+
+返回一个包含两个RDD中所有元素的RDD。（spark的union操作<u>包含重复数据</u>！）
+
+```java
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+JavaRDD<String> stringJavaRDD2 = javaSparkContext.parallelize(lines);
+
+// union操作：将两个RDD的数据聚合到一个RDD
+JavaRDD<String> unionRDD = stringJavaRDD.union(stringJavaRDD2);
+```
+
+
+
+##### intersection(other)
+
+返回两个RDD<u>都有的元素</u>，同时<u>去掉所有重复元素</u>。（注意：**单个RDD中的重复元素也会被移除**）
+
+性能差，需要网络混洗来发现共有元素。
+
+```java
+ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+    "spark",
+    "hadoop",
+    "hadoop",
+    "flink"
+));
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+ArrayList<String> lines2 = new ArrayList<>(Arrays.asList(
+    "hadoop",
+    "flink"
+));
+JavaRDD<String> stringJavaRDD2 = javaSparkContext.parallelize(lines2);
+
+// intersection操作：返回两个RDD都有的元素，同时去掉重复元素。（单个RDD中的重复元素也会被移除）
+JavaRDD<String> intersectionRDD = stringJavaRDD.intersection(stringJavaRDD2);
+// 输出：flink、hadoop
+```
+
+
+
+##### subtract(other)
+
+返回<u>只存在于第一个RDD而不存在于第二个RDD的**所有元素**</u>组成的RDD。（不去重！！！）
+
+需要网络混洗。
+
+```java
+ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+    "spark",
+    "spark",
+    "hadoop",
+    "hadoop",
+    "flink",
+    "flink"
+));
+
+ArrayList<String> lines2 = new ArrayList<>(Arrays.asList(
+    "hadoop",
+    "flink"
+));
+
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+JavaRDD<String> stringJavaRDD2 = javaSparkContext.parallelize(lines2);
+
+// 返回只存在于第一个RDD而不存在于第二个RDD的所有元素组成的RDD。（不去重！！！）
+JavaRDD<String> subtractRDD = stringJavaRDD.subtract(stringJavaRDD2);
+// 结果：spark、spark
+```
+
+
+
+##### cartesian(other)
+
+返回所有可能的(a,b)对，a来自第一个RDD，b来自另一个RDD。
+
+<u>大规模RDD的笛卡尔积开销巨大</u>！！！
+
+注意：<u>输出类型是两个RDD组成的RDD对（二元组）</u>
+
+```java
+ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+    "spark",
+    "hadoop",
+    "flink"
+));
+
+ArrayList<String> lines2 = new ArrayList<>(Arrays.asList(
+    "123",
+    "abc"
+));
+
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+JavaRDD<String> stringJavaRDD2 = javaSparkContext.parallelize(lines2);
+
+
+//  返回所有可能的(a,b)对，a来自第一个RDD，b来自另一个RDD。
+// 注意：输出类型和两个RDD类型不一样：是两个RDD组成的对！！！
+JavaPairRDD<String, String> cartesianRDD = stringJavaRDD.cartesian(stringJavaRDD2);
+
+
+// 测试输出
+cartesianRDD.foreach(new VoidFunction<Tuple2<String, String>>() {
+    @Override
+    public void call(Tuple2<String, String> tuple2Value) throws Exception {
+        System.out.println(tuple2Value);
+    }
+});
+// 输出：
+//(spark,123)
+//(spark,abc)
+//(hadoop,123)
+//(hadoop,abc)
+//(flink,123)
+//(flink,abc)
+```
+
+
 
 
 
 #### 2.5.2 行动操作
+
+1. 行动操作会把最终求出的结果返回到驱动器程序，或者写入外部存储系统中。会强制执行那些求值必须用到的RDD转化操作。
+
+##### reduce(function)
+
+接收一个函数作为参数，函数操作两个<u>RDD的元素类型的数据</u>，并<u>返回一个同样类型的**新元素**</u>。
+
+- （返回的不是RDD！！！ 可以看做聚合结果。）
+- 要求**函数返回值类型**和我们操作的<u>RDD类型相同</u>。
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+    new Tuple2<>("spark", 1),
+    new Tuple2<>("flink", 1),
+    new Tuple2<>("hadoop", 1),
+    new Tuple2<>("spark", 1)
+));
+
+JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = javaSparkContext.parallelize(lines);
+
+// reduce返回了聚合结果。
+Tuple2<String, Integer> reduce = tuple2JavaRDD.reduce(new Function2<Tuple2<String, Integer>, Tuple2<String, Integer>, Tuple2<String, Integer>>() {
+    @Override
+    public Tuple2<String, Integer> call(Tuple2<String, Integer> value1, Tuple2<String, Integer> value2) throws Exception {
+        StringBuffer sb = new StringBuffer();
+        // key 按照下划线“_”拼接在一起
+        String str = sb.append(value1._1).append("_").append(value2._1).toString();
+        // value 前后相加
+        int sum = value1._2 + value2._2;
+        Tuple2<String, Integer> t2 = new Tuple2<String, Integer>(str, sum);
+        return t2;
+    }
+});
+
+System.out.println(reduce.toString());
+```
+
+
+
+##### fold(initValue,function)
+
+两个参数：
+
+1. 初始值：作为每个分区第一次调用时的结果。
+   - 提供的初始值是你提供操作的单位元素。
+   - 注意：初始值必须多次调用时不会改变结果（例如＋对应0，*对应1，拼接操作对应空列表）。
+2. 函数：函数操作两个<u>RDD的元素类型的数据</u>，并<u>返回一个同样类型的**新元素**</u>。
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+    new Tuple2<>("spark", 1),
+    new Tuple2<>("flink", 1),
+    new Tuple2<>("hadoop", 1),
+    new Tuple2<>("spark", 1)
+));
+
+JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = javaSparkContext.parallelize(lines);
+
+// 创建一个初始状态
+Tuple2<String, Integer> beginState = new Tuple2<>("", 0);
+// fold参数：初始值，函数
+Tuple2<String, Integer> fold = tuple2JavaRDD.fold(beginState, new Function2<Tuple2<String, Integer>, Tuple2<String, Integer>, Tuple2<String, Integer>>() {
+    @Override
+    public Tuple2<String, Integer> call(Tuple2<String, Integer> first, Tuple2<String, Integer> second) throws Exception {
+        String str = new StringBuffer().append(first._1).append(second._1).toString();
+        int sum = first._2 + second._2;
+        Tuple2<String, Integer> t2result = new Tuple2<>(str, sum);
+        return t2result;
+    }
+});
+
+// 测试输出
+System.out.println(fold.toString());
+```
+
+##### count
+
+```java
+// 对RDD进行计数并输出
+System.out.println(filterRDD.count());
+```
+
+
+
+##### take
+
+```java
+// 获取第一个元素，并输出
+List<String> values = stringJavaRDD.take(1);
+for (String value : values) {
+    System.out.println(value);
+}
+```
+
+
+
+##### collect
+
+用来获取整个RDD的数据。
+
+注意：
+
+- 如果你把RDD筛选到很小的规模，并且希望在本地处理这些数据时，就可以使用它。
+- <u>只有当整个数据集能够在单台机器上放的下时，才能使用collect</u>。也就是说，**不能用在大规模数据集上！！！**
+
+```java
+// 获取整个RDD的数据（必须是小规模！！！）
+List<String> values = stringJavaRDD.collect();
+for (String value : values) {
+    System.out.println(value);
+}
+```
+
+
+
+#### 2.5.3 惰性求值
+
+1. 意味着当我们对RDD进行转化操作时，操作不会立即执行。Spark会在内部记录下要执行操作的相关信息。
+2. 数据读取到RDD的操作也是惰性的。
+   - 当我们调用sc.textFile时，数据并没有读取进来，而是在必要时才会读取。
+   - 和转化操作一样，读取操作也可能会多次执行。
+3. 最好把每个RDD当做我们通过转化操作构建出来的、记录如何计算数据的指令列表。
