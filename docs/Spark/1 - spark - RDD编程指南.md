@@ -525,15 +525,149 @@ for (String value : values) {
 （**如果为数据定义了顺序**！！！）获取前几个元素。
 
 1. 使用默认顺序
+
+   ```java
+   ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+       "1spark jjj",
+       "2spark jjjj",
+       "3spark jjjjj",
+       "4spark jjjjjj",
+       "5flink jjjjjjj",
+       "6flink"
+   ));
+   
+   JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+   
+   // 获取前3个元素
+   List<String> values = stringJavaRDD.top(3);
+   
+   for (String value : values) {
+       System.out.println(value);
+   }
+   ```
+
+   ```txt
+   6flink
+   5flink jjjjjjj
+   4spark jjjjjj
+   ```
+
 2. 可以自己提供比较函数来提取前几个元素。
 
-```java
+   ```java
+   // 创建 比较函数（这里需要实现序列化接口！！！）
+   public class TopComparator implements Comparator<String>, Serializable {
+       @Override
+       public int compare(String o1, String o2) {
+           if (o1.length() > o2.length()) {
+               return 1;
+           } else if (o1.length() < o2.length()) {
+               return -1;
+           } else {
+               return 0;
+           }
+       }
+   }
+   // spark 主程序中使用top并传入比较函数
+   ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+       "1spark jjj",
+       "2spark jjjj",
+       "3spark jjjjj",
+       "4spark jjjjjj",
+       "5flink jjjjjjj",
+       "6flink"
+   ));
+   
+   JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+   
+   // 获取前3个元素
+   List<String> values = stringJavaRDD.top(3, new TopComparator());
+   
+   for (String value : values) {
+       System.out.println(value);
+   }
+   ```
 
+   ```txt
+   5flink jjjjjjj
+   4spark jjjjjj
+   3spark jjjjj
+   ```
+
+
+
+##### takeSample(withReplacement, num, seed)
+
+三个参数：
+
+1. 是否可以重复抽样（会抽到同一个值）
+2. 抽取个数
+3. 随机数生成器的种子(一般都是默认不会指定)
+
+**从数据中获取一个采样，并指定是否替换。**
+
+仅在<u>预期结果数组很小的情况下使用</u>，因为所有数据都被加载到driver的内存中。
+
+```java
+// 不重复抽样，抽取两个，种子默认
+List<String> takeSampleValues = stringJavaRDD.takeSample(false, 2);
 ```
 
 
 
+##### countByValue
 
+返回一个从<u>各个值</u>到<u>值对应的计数</u>的映射表。
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+    new Tuple2<>("spark", 1),
+    new Tuple2<>("flink", 1),
+    new Tuple2<>("hadoop", 1),
+    new Tuple2<>("spark", 1)
+));
+
+JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = javaSparkContext.parallelize(lines);
+
+
+Map<Tuple2<String, Integer>, Long> tuple2LongMap = tuple2JavaRDD.countByValue();
+
+Set<Map.Entry<Tuple2<String, Integer>, Long>> entries = tuple2LongMap.entrySet();
+
+for (Map.Entry<Tuple2<String, Integer>, Long> entry : entries) {
+    System.out.println(entry.getKey() + "----------" + entry.getValue());
+}
+```
+
+```txt
+(flink,1)----------1
+(spark,1)----------2
+(hadoop,1)----------1
+```
+
+
+
+##### foreach
+
+对RDD中的每个元素进行操作，而不需要把RDD发回本地。
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+    new Tuple2<>("spark", 1),
+    new Tuple2<>("flink", 1),
+    new Tuple2<>("hadoop", 1),
+    new Tuple2<>("spark", 1)
+));
+
+JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = javaSparkContext.parallelize(lines);
+
+tuple2JavaRDD.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+    @Override
+    public void call(Tuple2<String, Integer> value) throws Exception {
+        System.out.println(value);
+    }
+});
+```
 
 #### 2.5.3 惰性求值
 
@@ -542,3 +676,14 @@ for (String value : values) {
    - 当我们调用sc.textFile时，数据并没有读取进来，而是在必要时才会读取。
    - 和转化操作一样，读取操作也可能会多次执行。
 3. 最好把每个RDD当做我们通过转化操作构建出来的、记录如何计算数据的指令列表。
+
+
+
+### 2.6 不同RDD类型间的转换
+
+有些函数只能用于特定的RDD类型：
+
+- mean、variance只能用在数值RDD上。
+- join只能用在键值对RDD上。
+
+要访问这些附加功能，必须确保获得了正确的专用RDD类。

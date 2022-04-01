@@ -6,13 +6,11 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
-public class SparkTopWithCustomSortByCollectionDemo {
+public class SparkTakeSampleByCollectionDemo {
     public static void main(String[] args) {
 
         SparkConf sparkConf = new SparkConf()
@@ -34,10 +32,9 @@ public class SparkTopWithCustomSortByCollectionDemo {
 
         JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
 
-        // 获取前3个元素
-        List<String> values = stringJavaRDD.top(3, new TopComparator());
+        List<String> takeSampleValues = stringJavaRDD.takeSample(false, 2);
 
-        for (String value : values) {
+        for (String value : takeSampleValues) {
             System.out.println(value);
         }
 
