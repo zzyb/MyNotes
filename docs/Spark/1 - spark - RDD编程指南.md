@@ -834,3 +834,193 @@ Spark持久化存储一个RDD时，计算出RDD的节点会分别保存他们求
 
 ## 三、键值对操作
 
+键值对类型的RDD被称为pairRDD。
+
+他们提供了<u>并行操作各个键</u>或<u>跨界点重新进行数据分组的</u>操作接口。
+
+<u>pairRDD也是RDD，因此同样支持RDD所支持的函数。</u>
+
+### 3.1 创建pairRDD
+
+#### map
+
+```java
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+// 返回的JavaRDD对象
+JavaRDD<Tuple2<String, Integer>> pairByMapRDD = stringJavaRDD.map(new Function<String, Tuple2<String, Integer>>() {
+  @Override
+  public Tuple2<String, Integer> call(String v1) throws Exception {
+    return new Tuple2<>(v1,1);
+  }
+});
+```
+
+
+
+#### mapToPair
+
+```java
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+
+// 返回的JavaPairRDD对象
+JavaPairRDD<String, Integer> pairByMapToPairRDD = stringJavaRDD.mapToPair(new PairFunction<String, String, Integer>() {
+  @Override
+  public Tuple2<String, Integer> call(String s) throws Exception {
+    return new Tuple2<>(s,1);
+  }
+});
+```
+
+
+
+#### 内存中创建pairRDD
+
+scala和python只需要对二元组集合调用`SparkContext.parallelize()`即可。
+
+Java需要使用`SparkContext.parallelizePairs()`。
+
+
+
+### 3.2 转化pairRDD
+
+#### 3.2.1 单个pairRDD
+
+##### reduceByKey
+
+合并具有相同键的值。
+
+```java
+// (spark,1)
+// (spark,1)
+// (hadoop,1)
+// (flink,1)
+
+JavaPairRDD<String, Integer> reduceByKeyRDD = pairByMapToPairRDD.reduceByKey(new Function2<Integer, Integer, Integer>() {
+  @Override
+  public Integer call(Integer v1, Integer v2) throws Exception {
+    return v1 + v2;
+  }
+});
+
+// (spark,2)
+// (hadoop,1)
+// (flink,1)
+```
+
+
+
+##### groupByKey
+
+对相同键的值进行分组。
+
+```java
+// (spark,1)
+// (spark,1)
+// (hadoop,1)
+// (flink,1)
+
+JavaPairRDD<String, Iterable<Integer>> groupByKey = pairByMapToPairRDD.groupByKey();
+
+// (spark,[1, 1])
+// (hadoop,[1])
+// (flink,[1])
+```
+
+
+
+##### combineByKey
+
+使用不同的返回类型合并具有相同键的值。
+
+```java
+```
+
+
+
+##### mapValues
+
+对键值对的每个值应用一个函数，不改变键。
+
+```java
+// (spark,1)
+// (spark,1)
+// (hadoop,1)
+// (flink,1)
+
+JavaPairRDD<String, Integer> mapValues = pairByMapToPairRDD.mapValues(new Function<Integer, Integer>() {
+  @Override
+  public Integer call(Integer v1) throws Exception {
+    return v1 * 2;
+  }
+});
+
+//(spark,2)
+//(flink,2)
+//(hadoop,2)
+//(spark,2)
+```
+
+
+
+##### flatMapValues
+
+对键值对的每个值应用一个函数，不改变键。
+
+```java
+// (spark,1)
+// (spark,1)
+// (hadoop,1)
+// (flink,1)
+
+JavaPairRDD<String, Integer> flatMapValues = pairByMapToPairRDD.flatMapValues(new FlatMapFunction<Integer, Integer>() {
+  @Override
+  public Iterator<Integer> call(Integer integer) throws Exception {
+    int[] result = {integer, integer + 1};
+    return Arrays.stream(result).iterator();
+  }
+});
+
+//(spark,1)
+//(spark,2)
+//(flink,1)
+//(flink,2)
+//(hadoop,1)
+//(hadoop,2)
+//(spark,1)
+//(spark,2)
+```
+
+
+
+##### keys
+
+返回仅包含key的RDD。
+
+```java
+```
+
+
+
+##### values
+
+返回仅包含value的RDD。
+
+```java
+
+```
+
+
+
+##### sortByKey
+
+返回根据键排序的RDD。
+
+```java
+
+```
+
+
+
+
+
+#### 3.2.2 两个pairRDD
