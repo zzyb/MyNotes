@@ -422,23 +422,65 @@ Tuple2<String, Integer> fold = tuple2JavaRDD.fold(beginState, new Function2<Tupl
 System.out.println(fold.toString());
 ```
 
+
+
+##### aggregate()
+
+aggregate函数**<u>可以返回与操作类型RDD不同类型的数据！！！</u>**
+
+三个参数：
+
+1. 初始值：期待返回类型的初始值。
+2. 一个函数：把RDD中的元素合并起来放入累加器。(每个节点上)
+3. 第二个函数：将累加器两两合并。（节点之间的）
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+  new Tuple2<>("spark", 1),
+  new Tuple2<>("flink", 2),
+  new Tuple2<>("hadoop", 3),
+  new Tuple2<>("spark", 4)
+));
+
+JavaRDD<Tuple2<String, Integer>> tuple2JavaRDD = javaSparkContext.parallelize(lines);
+
+// 创建一个初始状态（这里可以改变返回类型）
+Tuple3<String, Integer,Integer> beginState = new Tuple3<>("", 0,0);
+
+Tuple3<String, Integer, Integer> aggregate = tuple2JavaRDD.aggregate(
+  // 初始值，可以与输入RDD不同。
+  beginState,
+  // 合并元素到累加器
+  new Function2<Tuple3<String, Integer, Integer>, Tuple2<String, Integer>, Tuple3<String, Integer, Integer>>() {
+    @Override
+    public Tuple3<String, Integer, Integer> call(Tuple3<String, Integer, Integer> v1, Tuple2<String, Integer> v2) throws Exception {
+      String str = v1._1() + v2._1;
+      int sum = v1._2() + v2._2();
+      int count = v1._3() + 1;
+      return new Tuple3<>(str,sum,count);
+    }
+  },
+  //  不同分区间累加器的合并
+  new Function2<Tuple3<String, Integer, Integer>, Tuple3<String, Integer, Integer>, Tuple3<String, Integer, Integer>>() {
+    @Override
+    public Tuple3<String, Integer, Integer> call(Tuple3<String, Integer, Integer> v1, Tuple3<String, Integer, Integer> v2) throws Exception {
+      return new Tuple3<>(v1._1()+v2._1(),v1._2()+ v2._2(),v1._3()+v2._3());
+    }
+  }
+);
+
+// 最终输出结果：计算出来各个值的平均数。
+System.out.println(aggregate._1());
+System.out.println(Double.valueOf(aggregate._2())/aggregate._3());
+```
+
+
+
 ##### count
 
 ```java
 // 对RDD进行计数并输出
 System.out.println(filterRDD.count());
-```
-
-
-
-##### take
-
-```java
-// 获取第一个元素，并输出
-List<String> values = stringJavaRDD.take(1);
-for (String value : values) {
-    System.out.println(value);
-}
 ```
 
 
@@ -459,6 +501,37 @@ for (String value : values) {
     System.out.println(value);
 }
 ```
+
+
+
+##### take
+
+返回RDD的<u>n个元素，并尝试只访问尽量少的分区</u>。（因此会得到一个不均衡的集合）
+
+操作返回元素的顺序与你预期的可能不同。（<u>没有保证顺序</u>）
+
+```java
+// 获取第一个元素，并输出
+List<String> values = stringJavaRDD.take(1);
+for (String value : values) {
+    System.out.println(value);
+}
+```
+
+
+
+##### top
+
+（**如果为数据定义了顺序**！！！）获取前几个元素。
+
+1. 使用默认顺序
+2. 可以自己提供比较函数来提取前几个元素。
+
+```java
+
+```
+
+
 
 
 
