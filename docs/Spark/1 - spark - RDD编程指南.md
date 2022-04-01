@@ -686,4 +686,151 @@ tuple2JavaRDD.foreach(new VoidFunction<Tuple2<String, Integer>>() {
 - mean、variance只能用在数值RDD上。
 - join只能用在键值对RDD上。
 
-要访问这些附加功能，必须确保获得了正确的专用RDD类。
+要访问这些附加功能，<u>必须确保获得了正确的专用RDD类</u>。
+
+#### scala
+
+```scala
+// to-do
+```
+
+#### Java
+
+Java中有两个专门的类：
+
+- JavaDoubleRDD
+- JavaPairRDD
+
+来处理特殊类型的RDD。这两个类还针对这些类型提供了额外的函数。
+
+##### DoubleFunction\<T\>
+
+不能使用map接收这个函数，而要使用`mapToDouble`。
+
+```java
+// 使用DoubleFunction<T>，等价于Function<T,Double>
+// 对于这个案例：使用DoubleFunction<String>，等价于Function<String,Double>
+JavaDoubleRDD javaDoubleRDD = stringJavaRDD.mapToDouble(new DoubleFunction<String>() {
+    @Override
+    public double call(String s) throws Exception {
+        return s.length();
+    }
+});
+
+// Function<T,Double> 这里是：Function<String,Double>
+JavaRDD<Double> mapRDD = stringJavaRDD.map(new Function<String, Double>() {
+    @Override
+    public Double call(String v1) throws Exception {
+        return Double.valueOf(v1.length());
+    }
+});
+```
+
+
+
+##### DoubleFlatMapFunction\<String\>
+
+不能使用flatMap接收这个函数，而要使用`flatMapToDouble`。
+
+```java
+// 使用DoubleFlatMapFunction<T>，等价于Function<T,Iterator<Double>>
+// 对于这个案例：使用DoubleFlatMapFunction<String>，等价于Function<String,Iterator<Double>>
+JavaDoubleRDD javaDoubleRDD = stringJavaRDD.flatMapToDouble(new DoubleFlatMapFunction<String>() {
+    @Override
+    public Iterator<Double> call(String value) throws Exception {
+        String[] values = value.split(" ");
+        double[] doubles = Arrays.stream(values).mapToDouble(t -> t.length()).toArray();
+        return Arrays.stream(doubles).iterator();
+    }
+});
+
+// Function<T,Iterator<Double>> 这里是：Function<String,Iterator<Double>>
+JavaRDD<Double> flatMapRDD = stringJavaRDD.flatMap(new FlatMapFunction<String, Double>() {
+    @Override
+    public Iterator<Double> call(String value) throws Exception {
+        String[] values = value.split(" ");
+        double[] doubles = Arrays.stream(values).mapToDouble(t -> t.length()).toArray();
+        return Arrays.stream(doubles).iterator();
+    }
+});
+```
+
+##### PairFunction\<T,K,V\>
+
+```java
+// to-du
+```
+
+##### PairFlatMapFunction\<T,K,V\>
+
+```java
+// to-du
+```
+
+
+
+### 2.7 持久化（缓存）
+
+```java
+// RDD是惰性求值的，有时我们希望能够多次使用同一个RDD。
+// 如果简单的调用RDD行动操作，Spark每次都会重新计算RDD以及它的所有依赖。（这样消耗极大！！！）
+// 示例： 下面的代码会对map的操作进行两次计算。
+JavaRDD<Integer> mapRDD = stringJavaRDD.map(new Function<Integer, Integer>() {
+    @Override
+    public Integer call(Integer v1) throws Exception {
+        return v1 * v1;
+    }
+});
+// 第一次计算-1-count时。
+System.out.println(mapRDD.count());
+// 第二次计算-2-collect时。
+System.out.println(
+    Arrays.toString(
+        mapRDD.collect().toArray()
+    )
+);
+```
+
+为了<u>避免多次计算同一个RDD</u>，可以让Spark**对数据进行持久化**。
+
+
+
+Spark持久化存储一个RDD时，计算出RDD的节点会分别保存他们求出的分区数据。
+
+1. 如果一个有持久化数据的节点发生故障，Spark会在需要用到缓存数据时重算丢失的数据分区。
+2. 如果希望节点故障的情况不会拖累我们的执行速度，也可以把数据备份到多个节点上。
+
+
+
+出于不同的目的，RDD有**不同的持久化级别**：
+
+如果有必要，可以在**存储级别的末尾加上“_2”来把持久化数据存为两份**。
+
+| 持久化级别                             | 含义                                                         | 补充     |
+| :------------------------------------- | :----------------------------------------------------------- | -------- |
+| MEMORY_ONLY                            | 将RDD作为反序列化的Java对象存储在**JVM中**。 如果RDD不能装入内存，那么一些分区将不会被缓存，并将在每次需要它们时动态地重新计算。 | 默认级别 |
+| MEMORY_AND_DISK                        | 将RDD作为反序列化的Java对象存储在**JVM中**。 如果RDD不能装入内存，则一些分区会被持久化到**磁盘**，并在需要时从那里读取它们。 |          |
+| MEMORY_ONLY_SER (Java and Scala)       | 将RDD存储为<u>序列化的</u> Java对象(每个分区一个字节数组)。 这通常比反序列化的对象更节省空间，特别是使用[快速序列化器](https://spark.apache.org/docs/latest/tuning.html)时，但读取时更消耗CPU。 |          |
+| MEMORY_AND_DISK_SER (Java and Scala)   | 类似于MEMORY_ONLY_SER，但是将不能装入内存的分区溢出到磁盘中。 |          |
+| DISK_ONLY                              | 只存储在**磁盘上**。                                         |          |
+| MEMORY_ONLY_2, MEMORY_AND_DISK_2, etc. | 与上面的级别相同，但是在<u>两个集群节点上复制每个分区</u>。  |          |
+| OFF_HEAP (experimental)                | 类似于MEMORY_ONLY_SER，但是将数据存储在[堆外内存](https://spark.apache.org/docs/latest/configuration.html#memory-management)。 这需要启用堆外内存。 |          |
+
+
+
+#### cache
+
+底层调用的`persist`。
+
+#### persist
+
+可以设置各种持久化级别。默认级别是JVM堆空间。
+
+#### unpersist
+
+手动把持久化的RDD从缓存中移除。
+
+
+
+## 三、键值对操作
+
