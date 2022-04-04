@@ -1420,12 +1420,187 @@ partitionBy是一个转化操作，它会返回一个新的RDD，原来的RDD不
 
 
 
-#### 获取RDD分区的方式
+#### 3.5.3 获取RDD分区的方式
+
+##### partitioner()
+
+返回一个scala.Option对象（这是scala存放可能存在的对象的容器类）：
+
+1. 使用`isPresent()`判断是否有值，并使用`get()`获取其中的值。
+   - 如果值存在的话，会是一个spark.Partitioner对象。这本质上是一个告诉我们RDD中各个键分别属于那个分区的函数。
+
+```java
+JavaPairRDD<String, Integer> pairRDD = javaSparkContext.parallelizePairs(lines);
+
+// 获取RDD的partitioner属性。
+Optional<Partitioner> partitioner = pairRDD.partitioner();
+
+// 判断是否有值。
+boolean present = partitioner.isPresent();
+
+if (present) {
+  System.out.println(partitioner);
+} else {
+  System.out.println("partitioner is Null");
+}
+
+
+// partitioner is Null
+```
 
 
 
-#### 从分区中获益的操作
+**partitioner属性**：不仅是<u>检验各种Spark操作如何影响分区方式的一种好办法</u>，还可以用来<u>在程序中检查想要的操作是否会生成正确的结果</u>。
+
+```java
+// 对RDD进行PartitionBy分区操作！！！
+// 通常与持久化一起使用，否则后续RDD会一遍又一遍的对pairs进行哈希分区操作。
+JavaPairRDD<String, Integer> hashPartitionPairRDD = pairRDD.partitionBy(new HashPartitioner(3));
+
+// 获取RDD的partitioner属性。
+Optional<Partitioner> partitioner = hashPartitionPairRDD.partitioner();
+
+// 判断是否有值。
+boolean present = partitioner.isPresent();
+
+if (present) {
+  System.out.println(partitioner.get());
+} else {
+  System.out.println("partitioner is Null");
+}
+
+// org.apache.spark.HashPartitioner@3
+```
 
 
 
-#### 影响分区方式的操作
+#### 3.5.4 从分区中获益的操作
+
+数据<u>根据键进行跨界点的混洗</u>是很常见的。**合理的数据分区**将使<u>这些操作</u>受益！
+
+##### reduceByKey()
+
+​	这种只针对单个RDD的操作，运行在未分区的RDD上会导致每个键所有对应的值都在每台机器上进行本地计算，只需要把本地归约的结果从各个工作节点传回主节点，所以网络开销不大。
+
+##### cogroup() / join()
+
+这一类二元操作，预先进行数据分区会导致至少一个RDD（已知分区的RDD）不发生混洗。
+
+- 如果<u>两个RDD使用同样的分区方式，并且还缓存在同样的机器上</u>；或者其中一个RDD还没有被计算出来**那么跨节点的数据混洗就不会发生**。
+
+
+
+#### 3.5.5 影响分区方式的操作
+
+Spark内部知道各操作会如何影响分区方式，并将会<u>对数据进行分区的操作 的 `结果RDD`自动设置为对应的分区器</u>。
+
+- 例如join连接两个RDD，由于键相同的元素会被哈希到同一台机器上，Spark知道结果也是哈希分区的，这样对结果进行诸如reduceByKey这样的操作就会快很多。
+
+
+
+不过，转化操作的结果并<u>不一定会按照已知的分区方式分区</u>，这时输出的RDD可能就会没有设置分区器。
+
+- 当哈希分区的键值RDD调用map时，传入map的函数理论上可能改变元素的键，因此不会有固定的分区方式；（Spark不会分析你的函数来判断键是否被保留下来。）
+- 但是，Spark提供了另外两个`mapValues()`和`flatMapValues()`作为替代方法，他们可以保证每个<u>二元组</u>的键不变。
+  - 为了最大分区相关优化的潜在作用，应该在无需改变元素的键时尽量使用mapValues、flatMapValues。
+
+
+
+所有会为生成的结果RDD**设好分区方式的操作**：
+
+```
+cogroup
+
+groupWith
+
+join
+
+leftOuterJoin
+
+rightOuterJoin
+
+groupByKey
+
+reduceByKey
+
+combineByKey
+
+partitionBy
+
+sort
+
+mapValues（如果父RDD有分区方式的话）
+
+flatMapValues（如果父RDD有分区方式的话）
+
+filter（如果父RDD有分区方式的话）
+```
+
+
+
+对于**二元操作**，输出数据的分区方式取决于父RDD的分区方式：
+
+- 默认采用哈希分区，分区的数量和操作的并行度一样。
+  - 如果其中一个父RDD已经设置过分区方式，结果就采用那种方式。
+  - 如果两个父RDD都设置好了分区方式，结果RDD采用第一个父RDD的分区方式。
+
+
+
+
+
+### 3.6 自定义分区方式
+
+`HashPartitioner` 和 `RangePartitioner`已经能够满足大多数用例。
+
+同时，Spark也提供了`自定义Parritioner对象`来控制RDD分区的方式。（这可以让你利用领域知识进一步减少通信开销）
+
+
+
+要实现自定义分区器，需要继承`org.apache.spark.Partitioner`类并实现三个方法：
+
+1. numPartitions：Int：返回创建出来的分区数目。
+2. getPartition(key)：Int：返回指定键的分区编号（0到numPartitions-1）
+   - 注意：Java的hashCode方法可能会返回负数，但是getPartition永远返回一个非负数。
+3. equals()：Java判断相等性的标准方法。（非常重要），Spark需要使用这个方法来<u>检查你的分区器对象是否和其他分区器实例相同</u>，这样Spark才可以<u>判断两个RDD的分区方式是否相同</u>。
+
+```java
+JavaPairRDD<String, Integer> pairRDDWithCustomPartition = pairRDD.partitionBy(new Partitioner() {
+  @Override
+  public int numPartitions() {
+    return 3;
+  }
+
+  @Override
+  public int getPartition(Object key) {
+    String keyString = key.toString();
+    if (keyString.length() == 4) {
+      return 0;
+    } else if (keyString.length() == 5) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+});
+
+System.out.println(pairRDDWithCustomPartition.getNumPartitions());
+Optional<Partitioner> customPartitioner = pairRDDWithCustomPartition.partitioner();
+if (customPartitioner.isPresent()) {
+  System.out.println(customPartitioner.get());
+} else {
+  System.out.println("partitioner is Null !");
+}
+
+
+//3
+//example.run.rdd.pair.CreateCustomPartitionWithJavaPairRDDDemo$1@58f4b31a
+```
+
+
+
+
+
+如果你想对多个RDD使用相同的分区方式，应该使用**同一个函数的对象**（比如一个全局函数），而不是为每一个RDD创建一个新的函数对象。
+
+
+
