@@ -1,20 +1,20 @@
-package example.run.rdd.pair.single;
+package example.run.rdd.pair.transformations.single;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
-public class mapValuesWithJavaPairRDDDemo {
+public class flatMapValuesWithJavaPairRDDDemo {
     public static void main(String[] args) {
 
         SparkConf sparkConf = new SparkConf()
@@ -42,15 +42,16 @@ public class mapValuesWithJavaPairRDDDemo {
         });
 
 
-        JavaPairRDD<String, Integer> mapValues = pairByMapToPairRDD.mapValues(new Function<Integer, Integer>() {
+        JavaPairRDD<String, Integer> flatMapValues = pairByMapToPairRDD.flatMapValues(new FlatMapFunction<Integer, Integer>() {
             @Override
-            public Integer call(Integer v1) throws Exception {
-                return v1 * 2;
+            public Iterator<Integer> call(Integer integer) throws Exception {
+                int[] result = {integer, integer + 1};
+                return Arrays.stream(result).iterator();
             }
         });
 
 
-        mapValues.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+        flatMapValues.foreach(new VoidFunction<Tuple2<String, Integer>>() {
             @Override
             public void call(Tuple2<String, Integer> value) throws Exception {
                 System.out.println(value);

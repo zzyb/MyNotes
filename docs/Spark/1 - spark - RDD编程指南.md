@@ -887,7 +887,7 @@ Java需要使用`SparkContext.parallelizePairs()`。
 
 ##### reduceByKey
 
-合并具有相同键的值。
+合并具有相同键的值。（返回各个键和对应键归约出来的结果值组成的新RDD）
 
 ```java
 // (spark,1)
@@ -930,9 +930,49 @@ JavaPairRDD<String, Iterable<Integer>> groupByKey = pairByMapToPairRDD.groupByKe
 
 ##### combineByKey
 
-使用不同的返回类型合并具有相同键的值。
+使用<u>不同的返回类型</u>**合并具有相同键的值**。
+
+- combineByKey会遍历分区中的所有元素（每个元素的键要么没遇见过、要么与之前某一个相同）
+  - 如果是一个新元素，将使用`createCombiner()`函数创建那个键对应累加器的初始值。（发生在每个分区第一次出现各个键时（不会RDD中第一次））
+  - 如果是该分区已经遇到的键，将使用`mergeValue()`方法将该键的累加器对应的当前值与这个新值合并。
+- 由于分区都是独立的，因此同一个键可以有多个累加器。
+  - 两个或者多个分区都有对应同一个键的累加器，就需要用户使用`mergeCombiners()`将各个分区结果进行合并。
 
 ```java
+// (spark,1)
+// (spark,3)
+// (hadoop,1)
+// (flink,1)
+
+
+// 这里计算每个key的value的平均值
+JavaPairRDD<String, Tuple2<Double, Integer>> combineByKey = pairRDD.combineByKey(
+  // value,value累加器 (初次遇到)
+  new Function<Integer, Tuple2<Double, Integer>>() {
+    @Override
+    public Tuple2<Double, Integer> call(Integer v1) throws Exception {
+      return new Tuple2<Double, Integer>((double) v1, 1);
+    }
+  },
+  // value,value累加器 (非第一次遇到)
+  new Function2<Tuple2<Double, Integer>, Integer, Tuple2<Double, Integer>>() {
+    @Override
+    public Tuple2<Double, Integer> call(Tuple2<Double, Integer> v1, Integer v2) throws Exception {
+      return new Tuple2<>(v1._1 + (double) v2, v1._2 + 1);
+    }
+  },
+  // 不同分区累加器合并
+  new Function2<Tuple2<Double, Integer>, Tuple2<Double, Integer>, Tuple2<Double, Integer>>() {
+    @Override
+    public Tuple2<Double, Integer> call(Tuple2<Double, Integer> v1, Tuple2<Double, Integer> v2) throws Exception {
+      return new Tuple2<>(v1._1 + v2._1, v1._2 + v2._2);
+    }
+  }
+);
+
+//spark----2.0
+//hadoop----1.0
+//flink----1.0
 ```
 
 
@@ -997,6 +1037,17 @@ JavaPairRDD<String, Integer> flatMapValues = pairByMapToPairRDD.flatMapValues(ne
 返回仅包含key的RDD。
 
 ```java
+// (spark,1)
+// (spark,3)
+// (hadoop,1)
+// (flink,1)
+
+JavaRDD<String> keys = pairRDD.keys();
+
+String keyArrays = Arrays.toString(keys.collect().toArray());
+System.out.println(keyArrays);
+
+// [spark, flink, hadoop, spark]
 ```
 
 
@@ -1006,7 +1057,17 @@ JavaPairRDD<String, Integer> flatMapValues = pairByMapToPairRDD.flatMapValues(ne
 返回仅包含value的RDD。
 
 ```java
+// (spark,1)
+// (spark,3)
+// (hadoop,1)
+// (flink,1)
 
+JavaRDD<Integer> values = pairRDD.values();
+
+String valueArrays = Arrays.toString(values.collect().toArray());
+System.out.println(valueArrays);
+
+// [1, 1, 1, 3]
 ```
 
 
@@ -1015,12 +1076,312 @@ JavaPairRDD<String, Integer> flatMapValues = pairByMapToPairRDD.flatMapValues(ne
 
 返回根据键排序的RDD。
 
-```java
+默认（true）生序，提供参数false表示降序；也可以提供自定义排序：`Comparator`
 
+```java
+//(spark,1)
+//(zookeeper,1)
+//(flink,1)
+//(apache,1)
+//(hadoop,1)
+
+JavaPairRDD<String, Integer> sortByKey = pairRDD.sortByKey();
+
+//(apache,1)
+//(flink,1)
+//(hadoop,1)
+//(spark,1)
+//(zookeeper,1)
+
+
+
+// 默认（true）生序，可以不传递参数；
+// desc，表示采用降序
+JavaPairRDD<String, Integer> sortByKey = pairRDD.sortByKey(false);
+
+sortByKey.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+  @Override
+  public void call(Tuple2<String, Integer> value) throws Exception {
+    System.out.println(value);
+  }
+});
+
+//(zookeeper,1)
+//(spark,1)
+//(hadoop,1)
+//(flink,1)
+//(apache,1)
+```
+
+```java
+// 自定义排序：这里按照key字符串长度排序(需要实现Serializable)
+JavaPairRDD<String, Integer> sortByKey = pairRDD.sortByKey(new TopComparator());
+
+//(spark,1)
+//(flink,1)
+//(apache,1)
+//(hadoop,1)
+//(zookeeper,1)
 ```
 
 
 
-
-
 #### 3.2.2 两个pairRDD
+
+##### subtractByKey
+
+删掉RDD中与otherRDD键相同的元素。
+
+```java
+//firstRDD:
+  //(spark,1)
+  //(zookeeper,1)
+  //(flink,1)
+  //(apache,1)
+  //(hadoop,1)
+//otherRDD:
+  //(spark,1)
+  //(flink,1)
+
+JavaPairRDD<String, Integer> subtractByKey = firstRDD.subtractByKey(otherRDD);
+
+//(apache,1)
+//(zookeeper,1)
+//(hadoop,1)
+```
+
+
+
+##### join
+
+对两个RDD进行内连接。
+
+```java
+//firstRDD:
+  //(spark,1)
+  //(zookeeper,1)
+  //(flink,1)
+  //(apache,1)
+  //(hadoop,1)
+//otherRDD:
+  //(spark,2)
+  //(flink,2)
+
+JavaPairRDD<String, Tuple2<Integer, Integer>> join = firstRDD.join(otherRDD);
+
+//(spark,(1,2))
+//(flink,(1,2))
+```
+
+
+
+##### rightOuterJoin
+
+右外连接。
+
+对两个RDD进行连接操作，确保<u>右侧RDD的键必须存在</u>。
+
+```java
+//firstRDD:
+  //(spark,1)
+  //(zookeeper,1)
+  //(flink,1)
+  //(apache,1)
+  //(hadoop,1)
+//otherRDD:
+  //(spark,2)
+  //(flink,2)
+
+JavaPairRDD<String, Tuple2<Optional<Integer>, Integer>> rightOuterJoin = firstRDD.rightOuterJoin(otherRDD);
+
+//(spark,(Optional[1],2))
+//(flink,(Optional[1],2))
+```
+
+
+
+##### leftOuterJoin
+
+左外连接。
+
+对两个RDD进行连接操作，确保<u>左侧RDD的键必须存在</u>。
+
+```java
+//firstRDD:
+  //(spark,1)
+  //(zookeeper,1)
+  //(flink,1)
+  //(apache,1)
+  //(hadoop,1)
+//otherRDD:
+  //(spark,2)
+  //(flink,2)
+
+JavaPairRDD<String, Tuple2<Integer, Optional<Integer>>> leftOuterJoin = firstRDD.leftOuterJoin(otherRDD);
+
+//(spark,(1,Optional[2]))
+//(hadoop,(1,Optional.empty))
+//(flink,(1,Optional[2]))
+//(zookeeper,(1,Optional.empty))
+//(apache,(1,Optional.empty))
+```
+
+
+
+##### cogroup
+
+将两个RDD中有相同键的组合到一起。（注意与Join的区别！！！）【没有对应的也会输出】
+
+- 可以用来连接。
+- 可以求键的交集。
+- 还能同时应用于三个以上的RDD。
+
+```java
+//firstRDD:
+  //(spark,1)
+  //(zookeeper,1)
+  //(flink,1)
+  //(apache,1)
+  //(hadoop,1)
+//otherRDD:
+  //(spark,2)
+  //(flink,2)
+
+JavaPairRDD<String, Tuple2<Iterable<Integer>, Iterable<Integer>>> coGroup = firstRDD.cogroup(otherRDD);
+
+//(spark,([1],[2]))
+//(hadoop,([1],[]))
+//(flink,([1],[2]))
+//(zookeeper,([1],[]))
+//(apache,([1],[]))
+```
+
+### 3.3 并行度调优
+
+Spark始终尝试根据集群大小推出的一个有意义的默认值，但是有时候你可能需要自定义并行度来获取更好的性能表现。
+
+- <u>大多数算子都可以接收第二个参数，用来指定分组结果或聚合结果的RDD分区数目。</u>
+- 分组操作和聚合操作之外的操作也可以改变RDD分区。
+
+#### repartition()
+
+重新分区代价很大。会通过网络进行混洗，并创建出新的网络分区。
+
+```java
+// 获取当前分区
+int partitionSize = pairRDD.partitions().size();
+
+// 通过网络混洗，并创建新的分区集合。
+JavaPairRDD<String, Integer> repartitionRDD = pairRDD.repartition(2);
+
+// 混洗后的分区集合
+int repartitionSize = repartitionRDD.partitions().size();
+```
+
+
+
+#### coalesce()
+
+优化的repartition，将RDD合并比现有分区更少的分区。
+
+```java
+// 通过网络混洗，并创建新的分区集合。
+JavaPairRDD<String, Integer> repartitionRDD = pairRDD.repartition(4);
+// 混洗后的分区数目
+int repartitionSize = repartitionRDD.partitions().size();
+
+// 通过coalesce缩减分区
+JavaPairRDD<String, Integer> coalesceRDD = repartitionRDD.coalesce(4);
+// 指定更多的分区不会起作用，最多和之前的一样 此处指定为5，返回的还是4
+//        JavaPairRDD<String, Integer> coalesceRDD = repartitionRDD.coalesce(5);
+// 缩减后的分区数目
+int coalesceSize = coalesceRDD.partitions().size();
+```
+
+
+
+通过rdd.partitions.size()查看rdd分区数目。
+
+
+
+### 3.4 行动pairRDD
+
+#### countByKey()
+
+对每个键对应的元素分别计数。<u>返回Map</u>。
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+  new Tuple2<>("spark", 1),
+  new Tuple2<>("flink", 1),
+  new Tuple2<>("hadoop", 1),
+  new Tuple2<>("spark", 3)
+));
+
+JavaPairRDD<String, Integer> pairRDD = javaSparkContext.parallelizePairs(lines);
+
+Map<String, Long> stringLongMap = pairRDD.countByKey();
+
+Set<Map.Entry<String, Long>> entries = stringLongMap.entrySet();
+for (Map.Entry<String, Long> entry : entries) {
+  System.out.println(entry.getKey() + "----" + entry.getValue());
+}
+
+//spark----2
+//hadoop----1
+//flink----1
+```
+
+
+
+#### collectAsMap()
+
+将此RDD中的键值对作为Map返回给master。
+仅当预期结果数据较小时才应使用此方法，因为<u>所有数据都加载到驱动程序的内存中</u>。
+
+map的key是不重复的，所以<u>后续同一个key对应的value会覆盖前面的</u>！！！
+
+```java
+ArrayList<Tuple2<String, Integer>> lines = new ArrayList<Tuple2<String, Integer>>(Arrays.asList(
+  new Tuple2<>("spark", 1),
+  new Tuple2<>("flink", 1),
+  new Tuple2<>("hadoop", 1),
+  new Tuple2<>("spark", 3)
+));
+
+JavaPairRDD<String, Integer> pairRDD = javaSparkContext.parallelizePairs(lines);
+
+Map<String, Integer> collectAsMap = pairRDD.collectAsMap();
+
+Set<Map.Entry<String, Integer>> entries = collectAsMap.entrySet();
+for (Map.Entry<String, Integer> entry : entries) {
+  System.out.println(entry.getKey() + "----" + entry.getValue());
+}
+
+//hadoop----1
+//spark----3
+//flink----1
+```
+
+
+
+#### lookup(key)
+
+**返回键 key 的 RDD 中的值列表**。如果 RDD 具有已知的分区器，则此操作通过仅搜索键映射到的分区来有效地完成。
+
+```java
+// 这里返回key是spark的所有结果.
+List<Integer> keySpark = pairRDD.lookup("spark");
+
+System.out.println(Arrays.toString(keySpark.toArray()));
+```
+
+
+
+#### other
+
+
+
+### 3.5 数据分区
+
+在分布式程序中，**分区的代价是很大的**，因此<u>控制数据分布以获得最少的网络传输</u>可以极大的提升整体性能。
