@@ -2,6 +2,9 @@ package example.operator.shared.variable;
 
 import org.apache.spark.util.AccumulatorV2;
 
+/**
+ * 自定义累加器：这里求出获取到的最大值。
+ */
 public class CustomAccumulatorGetMaxInteger extends AccumulatorV2<Integer, Integer> {
 
     private int max = Integer.MIN_VALUE;
@@ -26,16 +29,16 @@ public class CustomAccumulatorGetMaxInteger extends AccumulatorV2<Integer, Integ
     @Override
     public void add(Integer v) {
         //
-        max = currentMaxValue = Math.max(this.max, v);
+        max = Math.max(this.max, v);
     }
 
     @Override
     public void merge(AccumulatorV2<Integer, Integer> other) {
-
+        max = Math.max(other.value(), max);
     }
 
     @Override
     public Integer value() {
-        return null;
+        return max;
     }
 }

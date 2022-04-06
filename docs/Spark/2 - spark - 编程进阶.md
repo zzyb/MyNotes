@@ -132,6 +132,97 @@ System.out.println("包含spark的数据为：" + Arrays.toString(hasSparkAccumu
 
 
 
+自定义累加器：
+
+```java
+import org.apache.spark.util.AccumulatorV2;
+
+/**
+ * 自定义累加器：这里求出获取到的最大值。
+ */
+public class CustomAccumulatorGetMaxInteger extends AccumulatorV2<Integer, Integer> {
+
+    private int max = Integer.MIN_VALUE;
+
+    @Override
+    public boolean isZero() {
+        return max == Integer.MIN_VALUE;
+    }
+
+    @Override
+    public AccumulatorV2<Integer, Integer> copy() {
+        CustomAccumulatorGetMaxInteger copyAcc = new CustomAccumulatorGetMaxInteger();
+        copyAcc.max = this.max;
+        return copyAcc;
+    }
+
+    @Override
+    public void reset() {
+        max = Integer.MIN_VALUE;
+    }
+
+    @Override
+    public void add(Integer v) {
+        //
+        max = Math.max(this.max, v);
+    }
+
+    @Override
+    public void merge(AccumulatorV2<Integer, Integer> other) {
+        max = Math.max(other.value(), max);
+    }
+
+    @Override
+    public Integer value() {
+        return max;
+    }
+}
+
+```
+
+使用自定义累加器：
+
+```java
+// 创建自定义累加器对象
+CustomAccumulatorGetMaxInteger customAccumulatorGetMaxInteger = new CustomAccumulatorGetMaxInteger();
+
+// 注册自定义累加器
+sparkContext.register(customAccumulatorGetMaxInteger, "getMax");
+
+// 初始化自定义累加器。
+customAccumulatorGetMaxInteger.reset();
+
+JavaRDD<Integer> mapRDD = integerJavaRDD.map(new Function<Integer, Integer>() {
+    @Override
+    public Integer call(Integer v1) throws Exception {
+        // 向累加器添加值
+        customAccumulatorGetMaxInteger.add(v1);
+        return v1;
+    }
+});
+
+
+mapRDD.foreach(new VoidFunction<Integer>() {
+    @Override
+    public void call(Integer integer) throws Exception {
+        System.out.println(integer);
+    }
+});
+
+// 注意：要在行动算子之后
+System.out.println(" 累加的最大值是：" + customAccumulatorGetMaxInteger.value());
+
+// 输出：
+//12
+//33
+//2
+//98
+//37
+// 累加的最大值是：98
+```
+
+
+
 ### 1.2 广播变量（broadcast variable）
 
 广播变量用来<u>高效分发较大对象</u>。
