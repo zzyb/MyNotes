@@ -225,5 +225,82 @@ System.out.println(" 累加的最大值是：" + customAccumulatorGetMaxInteger.
 
 ### 1.2 广播变量（broadcast variable）
 
+#### 1.1.1 简介与用例
+
 广播变量用来<u>高效分发较大对象</u>。
+
+- 可以让程序高效的向所有工作节点发送一个较大的只读值，以供一个或多个Spark操作使用。
+  - 比如：向所有节点发送一个较大的只读查询表。
+  - 比如：机器学习中的一个很大的特征向量。
+
+
+
+广播变量其实就是**类型为`spark.broadcasst.Broadcast[T]`的一个对象**，其中存放着类型为T的值。
+
+- 可以在任务中通过对Broadcast调用value来获取值。
+- 这个值<u>只会发送到各个节点一次</u>，使用的是一种高效的类似`BitTorrent`的通讯机制。
+
+```java
+HashMap<String, String> codes = new HashMap<String, String>();
+codes.put("spark", "大规模数据处理的统一分析引擎。");
+codes.put("flink", "有状态的分布式流式计算引擎。");
+codes.put("hive", "数据仓库");
+codes.put("zookeeper", "分布式监控服务");
+codes.put("hadoop", "包含hdfs、yarn、mapreduce。");
+codes.put("hdfs", "分布式文件系统");
+codes.put("yarn", "集群资源管理系统");
+codes.put("kafka", "消息中间件");
+
+// 广播变量:将映射转化为广播变量
+Broadcast<HashMap<String, String>> hashMapBroadcast = javaSparkContext.broadcast(codes);
+
+
+ArrayList<String> lines = new ArrayList<>(Arrays.asList(
+    "spark hdfs",
+    "hadoop",
+    "zookeeper",
+    "flink kafka"
+));
+
+JavaRDD<String> stringJavaRDD = javaSparkContext.parallelize(lines);
+
+
+JavaRDD<String> flatMapRDD = stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
+    @Override
+    public Iterator<String> call(String s) throws Exception {
+        String[] values = s.split(" ");
+        return Arrays.stream(values).iterator();
+    }
+});
+
+JavaRDD<Tuple2<String, String>> mapRDD = flatMapRDD.map(new Function<String, Tuple2<String, String>>() {
+    @Override
+    public Tuple2<String, String> call(String v1) throws Exception {
+        // 获取广播变量
+        HashMap<String, String> values = hashMapBroadcast.value();
+        // 使用广播变量
+        String value = values.get(v1);
+        if (null != value) {
+            return new Tuple2<>(v1, value);
+        } else {
+            return new Tuple2<>(v1, "not found !");
+        }
+    }
+});
+
+mapRDD.foreach(new VoidFunction<Tuple2<String, String>>() {
+    @Override
+    public void call(Tuple2<String, String> value) throws Exception {
+        System.out.println(value);
+    }
+});
+
+
+//(spark,大规模数据处理的统一分析引擎。)
+//(hdfs,分布式文件系统)
+//(hadoop,包含hdfs、yarn、mapreduce。)
+//(zookeeper,分布式监控服务)
+//(flink,有状态的分布式流式计算引擎。)
+//(kafka,消息中间件)
+```
 
