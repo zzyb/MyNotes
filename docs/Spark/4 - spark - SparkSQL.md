@@ -1,5 +1,30 @@
 # Spark SQL
 
+## 一、简介
+
+用来操作`结构化`和`半结构化`数据的接口——Spark SQL。
+
+### 三大功能
+
+- 可以从各种结构化数据源读取数据。（JSON、Hive、Parquet等）
+- 不仅支持在程序内使用SQL语句进行数据查询，也支持从使用商业软件通过标准数据库连接器（JDBC/ODBC）连接Spark SQL进行查询。
+- 程序中使用Spark SQL时，支持SQL与常规的代码高度整合，包括连接RDD与SQL表、公开定义SQL函数接口等。
+
+### SchemaRDD
+
+- SchemaRDD是一种**特殊的RDD**。<u>存放了Row对象的RDD，每个Row对象表示一行记录</u>。
+- SchemaRDD还<u>包含了记录的结构信息</u>（即数据字段）。
+- SchemaRDD<u>支持SQL查询</u>。
+- SchemaRDD还可以从<u>外部数据源</u>**创建**，也可以<u>从查询结果或普通RDD中</u>**创建**。
+
+
+
+## 二、连接Spark SQL
+
+
+
+
+
 ## 开始
 
 ### 起点: SparkSession
