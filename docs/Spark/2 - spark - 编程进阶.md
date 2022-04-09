@@ -225,7 +225,7 @@ System.out.println(" 累加的最大值是：" + customAccumulatorGetMaxInteger.
 
 ### 1.2 广播变量（broadcast variable）
 
-#### 1.1.1 简介与用例
+#### 1.2.1 简介与用例
 
 广播变量用来<u>高效分发较大对象</u>。
 
@@ -303,4 +303,204 @@ mapRDD.foreach(new VoidFunction<Tuple2<String, String>>() {
 //(flink,有状态的分布式流式计算引擎。)
 //(kafka,消息中间件)
 ```
+
+#### 1.2.2 广播变量用法
+
+1. 对类型T调用SparkContext.broadcast创建出一个Broadcast[T]对象。（任何可序列化类型都可以这么实现！）
+2. 通过value属性访问该对象的值（在java中是value()方法）。
+3. 变量只会被发到各个节点一次，应作为**只读值**处理（修改这个值不会影响其他的节点）。
+   - 满足只读值的最容易方式是：广播<u>基本类型的值</u>或者<u>引用不可变对象</u>。
+   - 有时，传递一个可变对象更为方便与高效。这时候，你需要自己维护只读条件。
+
+#### 1.2.3 广播的优化
+
+广播一个比较大的值时，选择<u>既快又好的**序列化格式**</u>是非常重要的。（序列化太慢、传送太慢都会成为性能瓶颈！）
+
+- Spark的Scala和Java API默认使用`Java序列化库`。(对基本类型的数组以外的任何对象都比较低效)
+- 可以使用spark.serializer属性选择另一个序列化库来优化序列化过程。（例如`Kryo`--更快的序列化库）
+
+
+
+### 1.3 基于分区的操作
+
+基于分区的操作可以：**避免为每个数据元素进行重复的配置工作**。
+
+```shell
+# 诸如打开数据连接、创建随机数生成器等操作。都应当避免为每个元素配置一次。
+```
+
+Spark提供了<u>基于分区的map和foreach，让你的代码对RDD的每个分区运行一次</u>，这样可以帮助降低这些操作的代价。
+
+- 当基于分区操作RDD时，Spark会为函数提供该分区中的元素迭代器。返回值方面，也返回一个迭代器。
+
+
+
+#### mapPartitions()
+
+调用时：提供分区中元素迭代器。
+
+返回时：返回的元素的迭代器。
+
+`（Iterator[T]）-> Iterator[U]`
+
+```java
+ArrayList<Integer> lines = new ArrayList<>(Arrays.asList(
+  10,
+  10,
+  10,
+  10,
+  15
+));
+
+JavaRDD<Integer> integerJavaRDD = javaSparkContext.parallelize(lines);
+
+/**
+         * 使用map求平均数。
+         * 这里会将每个值，转为为一个二元组Tuple2
+         */
+//        Tuple2<Integer, Integer> map = integerJavaRDD
+//                .map(new Function<Integer, Tuple2<Integer, Integer>>() {
+//                    @Override
+//                    public Tuple2<Integer, Integer> call(Integer v1) throws Exception {
+//                        return new Tuple2<>(v1, 1);
+//                    }
+//                }).reduce(new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>, Tuple2<Integer, Integer>>() {
+//                    @Override
+//                    public Tuple2<Integer, Integer> call(Tuple2<Integer, Integer> v1, Tuple2<Integer, Integer> v2) throws Exception {
+//                        return new Tuple2<>(v1._1 + v2._1, v1._2 + v2._2);
+//                    }
+//                });
+//
+//        System.out.println("map: " + (double) map._1 / map._2);
+
+
+
+/**
+         * 使用mapPartitions来求平均数。
+         * 这里每个分区只需要一个二元组Tuple2
+         */
+JavaRDD<Tuple2<Integer, Integer>> mapPartitions = integerJavaRDD.mapPartitions(new FlatMapFunction<Iterator<Integer>, Tuple2<Integer, Integer>>() {
+  @Override
+  public Iterator<Tuple2<Integer, Integer>> call(Iterator<Integer> integerIterator) throws Exception {
+    int sum = 0;
+    int count = 0;
+    while (integerIterator.hasNext()) {
+      sum = sum + integerIterator.next();
+      count = count + 1;
+    }
+    ArrayList<Tuple2<Integer, Integer>> resultArrayList = new ArrayList<>(
+      Arrays.asList(
+        new Tuple2<>(sum, count)
+      )
+    );
+
+    return resultArrayList.iterator();
+  }
+});
+
+Tuple2<Integer, Integer> reduce = mapPartitions.reduce(new Function2<Tuple2<Integer, Integer>, Tuple2<Integer, Integer>, Tuple2<Integer, Integer>>() {
+  @Override
+  public Tuple2<Integer, Integer> call(Tuple2<Integer, Integer> v1, Tuple2<Integer, Integer> v2) throws Exception {
+    return new Tuple2<Integer, Integer>(v1._1 + v2._1, v1._2 + v2._2);
+  }
+});
+
+System.out.println("mapPartitions: " + (double) reduce._1 / reduce._2);
+
+```
+
+
+
+#### mapPartitionsWithIndex()
+
+调用时：分区序号、以及每个分区中的元素的迭代器。
+
+返回时：返回的元素的迭代器。
+
+`（Int,Iterator[T]）-> Iterator[U]`
+
+
+
+#### foreachPartitions()
+
+调用时：提供分区中元素迭代器。
+
+返回时：无。
+
+`（Iterator[T]）-> Unit`
+
+
+
+### 1.4 与外部程序间的管道
+
+如果Java、Scala、Python都不能实现你的功能，Spark提供了一种通用的机制，<u>可以将数据通过管道传递给其他语言编写的程序</u>。
+
+#### pipe
+
+`pipe()`方法可以让我们使用任意一种语言实现Spark作业中的部分逻辑。
+
+```java
+// TO-DO
+```
+
+
+
+### 1.5 数值RDD的操作
+
+Spark对数值型RDD提供了一些描述性的统计操作。
+
+- 这些数值操作都是通过流式算法实现的。
+  - 这些统计数据都会在调用stats()时通过一次遍历统计出来，并以StatsCounter对象返回。
+
+#### count
+
+RDD元素个数。
+
+
+
+#### mean
+
+元素平均值。
+
+
+
+#### sum
+
+总和。
+
+
+
+#### max
+
+最大值。
+
+
+
+#### min
+
+最小值。
+
+
+
+#### variance
+
+元素的方差。
+
+
+
+#### sampleVariance
+
+从采样中计算的方差。
+
+
+
+#### stdev
+
+标准差。
+
+
+
+#### sampleStdev
+
+采样的标准差。
 
