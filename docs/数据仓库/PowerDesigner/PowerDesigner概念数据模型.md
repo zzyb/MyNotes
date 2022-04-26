@@ -91,3 +91,25 @@
 ![image-20220426131444591](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426131444591.png)
 
 ### 2.2 定义联系
+
+**联系**是指<u>两个实体之间或实体内部的连接或关系</u>； 
+
+完成实体定义以后，应该在它们之间建立联系。实体的联系通常是依据 业务规则确定的。
+
+![image-20220426175345646](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426175345646.png)
+
+![image-20220426175618485](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426175618485.png)
+
+Dominant role：只针对 1：1 才可以设置，用于定义主导角色。
+
+Mandatory(强制)，表示至少为1。（0,1勾选后变为1,1）
+
+### 2.3 定义关联
+
+
+
+### 2.4 定义多元联系
+
+
+
+### 2.5 递归联系
