@@ -51,3 +51,43 @@
 ### 1.3 数据项
 
 数据项是**信息存储的最小单位**，它附加在实体上作为实体的属性。
+
+![image-20220426130909066](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426130909066.png)
+
+### 1.4 关联与关联链接
+
+​	关联以及关联链接<u>用于描述 CDM 棋型中联系无法表示的特性</u>。如果联系本 身包含属性则需要采用关联以及关联链接对其进行描述，或者将联系转换为实 体(详见定义多元联系)。
+
+
+
+## 二、操作
+
+### 2.1 定义实体
+
+![image-20220426125222630](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426125222630.png)
+
+- General 选项卡用于设置实体名称、代码和注释等信息；
+- Attributes 选顶卡 用子设置实体包括的属性(字段)信息；
+- Identifiers 选项卡可用于设置实体标识 符。
+- Notes 选项卡用于设置实体的描述信息;
+- Rules 选顶卡用于设置与该实体相关 的业务规则。
+
+（Generate:是否生成此实体，即生成 PDM 时该实体是否生成一个表）
+
+
+
+![image-20220426130611926](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426130611926.png)
+
+
+
+#### 域Domain
+
+​	一个**域**定义你能适用于多个数据项目的标准数据结构。 当你修正一个域 时,你将更新全部与域关联的数据项。 当你作任何变化的时候 , 这导致 数据一致化特性比较容易。
+
+​	可以创建一些自己常用的域,来应用到数据对象上。
+
+![image-20220426131327921](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426131327921.png)
+
+![image-20220426131444591](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220426131444591.png)
+
+### 2.2 定义联系
