@@ -1,4 +1,4 @@
-# 概念数据模型
+# 概念数据模型 CDM
 
 ​	**概念数据模型（CDM）**，可以帮助你分析信息系统的概念结构，识别主要的 实体，及其属性，以及它们之间的关系。CDM 比逻辑（LDM）或物理数据模型 （PDM）更抽象。
 
@@ -106,10 +106,12 @@ Mandatory(强制)，表示至少为1。（0,1勾选后变为1,1）
 
 ### 2.3 定义关联
 
-
-
 ### 2.4 定义多元联系
 
-
-
 ### 2.5 递归联系
+
+### 2.6 检查模型
+
+![image-20220427094105652](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220427094105652.png)
+
+![image-20220427094228467](D:\zyb\project\MyNotes\docs\数据仓库\PowerDesigner\PowerDesigner概念数据模型.resource\image-20220427094228467.png)
